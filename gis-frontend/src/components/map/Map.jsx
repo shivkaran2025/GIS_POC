@@ -198,7 +198,7 @@ const MAP_STYLE =
 const INITIAL_VIEW = {
   longitude: -98,
   latitude: 39,
-  zoom: 3.5,
+  zoom: 3.8,
 };
 
 const MapLibreComponent = () => {
@@ -218,6 +218,14 @@ const MapLibreComponent = () => {
   const mapRef = useRef(null);
   const hoveredFeatureIdRef = useRef(null);
 
+  // Cache for site data
+  const siteCacheRef = useRef({});
+
+  // helper: cache key
+  const makeCacheKey = (centerLat, centerLng, radius) => {
+    return `${centerLat.toFixed(2)}_${centerLng.toFixed(2)}_${radius.toFixed(2)}`;
+  };
+
   // fetch market regions initially
   useEffect(() => {
     const load = async () => {
@@ -229,6 +237,55 @@ const MapLibreComponent = () => {
     load();
   }, []);
 
+  // Helper function to extract bounds and calculate center/radius
+  const getBoundsData = useCallback((mapInstance) => {
+    const bounds = mapInstance.getBounds();
+    const centerLat = (bounds.getNorth() + bounds.getSouth()) / 2;
+    const centerLng = (bounds.getEast() + bounds.getWest()) / 2;
+    const radius = Math.max(
+      bounds.getNorth() - bounds.getSouth(),
+      bounds.getEast() - bounds.getWest()
+    ) / 2;
+
+    return { centerLat, centerLng, radius, bounds };
+  }, []);
+
+  // Function to handle map drag and fetch data based on current viewport
+  const handleMapDrag = useCallback(
+    async (evt) => {
+      if (currentView !== "site") return;
+
+      try {
+        const { centerLat, centerLng, radius } = getBoundsData(evt.target);
+        const cacheKey = makeCacheKey(centerLat, centerLng, radius);
+
+        // check cache first
+        if (siteCacheRef.current[cacheKey]) {
+          setSiteData(siteCacheRef.current[cacheKey]);
+          return;
+        }
+
+        setLoading(true);
+        const data = await getSiteLocationsByCoordinates(
+          centerLat,
+          centerLng,
+          radius
+        );
+
+        if (data) {
+          setSiteData(data);
+          siteCacheRef.current[cacheKey] = data; // save to cache
+        }
+      } catch (error) {
+        console.error("Error fetching site data:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [currentView, getBoundsData]
+  );
+
+  // Enhanced move handler that handles both zoom and drag
   const handleMove = useCallback(
     async (evt) => {
       const zoom = evt.viewState.zoom;
@@ -236,37 +293,52 @@ const MapLibreComponent = () => {
       if (zoom < 8) {
         if (currentView !== "market") {
           setCurrentView("market");
-          const data = await getMarketRegions();
-          if (data) setMarketData(data);
+          setLoading(true);
+          try {
+            const data = await getMarketRegions();
+            if (data) setMarketData(data);
+          } catch (error) {
+            console.error("Error fetching market data:", error);
+          } finally {
+            setLoading(false);
+          }
         }
       } else {
         if (currentView !== "site") {
           setCurrentView("site");
+          try {
+            const { centerLat, centerLng, radius } = getBoundsData(evt.target);
+            const cacheKey = makeCacheKey(centerLat, centerLng, radius);
 
-          const bounds = evt.target.getBounds();
-          const centerLat = (bounds.getNorth() + bounds.getSouth()) / 2;
-          const centerLng = (bounds.getEast() + bounds.getWest()) / 2;
-          const radius =
-            Math.max(
-              bounds.getNorth() - bounds.getSouth(),
-              bounds.getEast() - bounds.getWest()
-            ) / 2;
+            // check cache first
+            if (siteCacheRef.current[cacheKey]) {
+              setSiteData(siteCacheRef.current[cacheKey]);
+              return;
+            }
 
-          const data = await getSiteLocationsByCoordinates(
-            centerLat,
-            centerLng,
-            radius
-          );
-          if (data) setSiteData(data);
+            setLoading(true);
+            const data = await getSiteLocationsByCoordinates(
+              centerLat,
+              centerLng,
+              radius
+            );
+            if (data) {
+              setSiteData(data);
+              siteCacheRef.current[cacheKey] = data;
+            }
+          } catch (error) {
+            console.error("Error fetching site data:", error);
+          } finally {
+            setLoading(false);
+          }
         }
       }
     },
-    [currentView]
+    [currentView, getBoundsData]
   );
 
   const handleMouseMove = useCallback((evt) => {
     if (!evt.features || evt.features.length === 0) {
-      // Hide tooltip when no features
       setTooltip((prev) => ({ ...prev, visible: false }));
       return;
     }
@@ -283,7 +355,6 @@ const MapLibreComponent = () => {
       return;
     }
 
-    // Update hover state for styling
     const newId = feature.id;
     const prevId = hoveredFeatureIdRef.current;
     if (prevId !== null && prevId !== undefined && prevId !== newId) {
@@ -298,7 +369,6 @@ const MapLibreComponent = () => {
       } catch (_) {}
     }
 
-    // Update tooltip
     setTooltip({
       visible: true,
       content: feature,
@@ -319,8 +389,6 @@ const MapLibreComponent = () => {
     }
 
     hoveredFeatureIdRef.current = null;
-
-    // Hide tooltip
     setTooltip((prev) => ({ ...prev, visible: false }));
   }, []);
 
@@ -332,6 +400,7 @@ const MapLibreComponent = () => {
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
         onMoveEnd={handleMove}
+        onDragEnd={handleMapDrag}
         interactiveLayerIds={["market-fill"]}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -386,7 +455,7 @@ const MapLibreComponent = () => {
           </Source>
         )}
 
-        {/* Site locations as dark grey markers - REPLACED CIRCLE LAYER */}
+        {/* Site locations */}
         {currentView === "site" &&
           siteData &&
           siteData.sites &&
@@ -407,7 +476,7 @@ const MapLibreComponent = () => {
                   style={{
                     width: "16px",
                     height: "16px",
-                    backgroundColor: "#333333", // Dark grey
+                    backgroundColor: "#333333",
                     border: "2px solid white",
                     borderRadius: "50% 50% 50% 0",
                     transform: "rotate(-45deg)",
@@ -444,7 +513,7 @@ const MapLibreComponent = () => {
           })}
       </Map>
 
-      {/* Tooltip Component */}
+      {/* Tooltip */}
       <MapTooltip
         visible={tooltip.visible}
         content={tooltip.content}
@@ -459,10 +528,11 @@ const MapLibreComponent = () => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            backgroundColor: "rgba(255,255,255,0.9)",
-            padding: "12px 20px",
-            borderRadius: "6px",
-            zIndex: 999,
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            padding: "16px 24px",
+            borderRadius: "8px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            zIndex: 1002,
           }}
         >
           Loading...
@@ -473,3 +543,4 @@ const MapLibreComponent = () => {
 };
 
 export default MapLibreComponent;
+
