@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   getMarketRegions, 
   getSiteLocations, 
-  getSiteLocationsByCoordinates 
+  getSiteLocationsByCoordinates,
+  getCdcNeighborhoods
 } from "../services/apiService";
 
 export const useMapData = () => {
@@ -38,6 +39,22 @@ export const useMapData = () => {
         setError("Failed to load market data");
         console.error("Error loading market data:", err);
       }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadNeighborhoodData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await getCdcNeighborhoods();
+      setCurrentData(data);
+      setCurrentView("neighborhood");
+      setSiteCount(data.features?.length || 0);
+    } catch (err) {
+      setError("Failed to load neighborhood data");
+      console.error("Error loading neighborhood data:", err);
     } finally {
       setLoading(false);
     }
@@ -102,6 +119,7 @@ export const useMapData = () => {
     siteCount,
     loadMarketData,
     loadSiteData,
+    loadNeighborhoodData,
     loadDataByZoomLevel,
   };
 };

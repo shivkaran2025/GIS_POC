@@ -29,6 +29,59 @@ export const getMarketRegionById = async (marketName, signal) => {
   }
 };
 
+// CDC Neighborhoods API
+export const getCdcNeighborhoods = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/cdc-neighborhoods`);
+    if (!response.ok) throw new Error("Failed to fetch CDC neighborhoods");
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching CDC neighborhoods:", error);
+    throw error;
+  }
+};
+
+export const getCdcNeighborhoodById = async (id) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/cdc-neighborhoods/id/${id}`);
+    if (!response.ok) throw new Error("Failed to fetch CDC neighborhood");
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching CDC neighborhood:", error);
+    throw error;
+  }
+};
+
+// Add this function to your apiService.js
+
+export const getCdcNeighborhoodsByBounds = async (bounds, signal) => {
+  try {
+    const { north, south, east, west } = bounds;
+    
+    console.log("Fetching neighborhoods for bounds:", bounds);
+    
+    const response = await fetch(
+      `${API_BASE_URL}/api/cdc-neighborhoods/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
+      { signal }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log(`Received ${data.count} neighborhoods for current bounds`);
+    
+    return data;
+  } catch (error) {
+    if (error.name === "AbortError") return null;
+    console.error("Error fetching CDC neighborhoods by bounds:", error);
+    throw error;
+  }
+};
+
+
+
 // Site Locations API
 export const getSiteLocations = async (signal) => {
   try {
@@ -85,6 +138,46 @@ export const search = async (query, dataset = "all", signal) => {
     if (error.name === "AbortError") return null;
     console.error("Error searching:", error);
     throw error;
+  }
+};
+
+
+// ZIP Codes API (NEW)
+export const getZipCodes = async (signal) => {
+  try {
+    console.log("Fetching all ZIP codes");
+    const response = await fetch(`${API_BASE_URL}/api/zip-codes`, { signal });
+    if (!response.ok) throw new Error("Failed to fetch ZIP codes");
+    return await response.json();
+  } catch (error) {
+    if (error.name === "AbortError") return null;
+    console.error("Error fetching ZIP codes:", error);
+    throw error;
+  }
+};
+
+export const getZipCodesByBounds = async (bounds, signal) => {
+  try {
+    const { north, south, east, west } = bounds;
+    console.log("Fetching ZIP codes for bounds:", bounds);
+    
+    const response = await fetch(
+      `${API_BASE_URL}/api/zip-codes/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
+      { signal }
+    );
+    
+    if (!response.ok) {
+      console.warn("Bounds endpoint not available, falling back to all ZIP codes");
+      return await getZipCodes(signal);
+    }
+    
+    const data = await response.json();
+    console.log(`Received ${data.count} ZIP codes for current bounds`);
+    return data;
+  } catch (error) {
+    if (error.name === "AbortError") return null;
+    console.error("Error fetching ZIP codes by bounds:", error);
+    return await getZipCodes(signal);
   }
 };
 

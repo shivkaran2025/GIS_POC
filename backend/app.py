@@ -184,6 +184,38 @@ def get_zip_code_by_zipcode(zipcode):
     
     return jsonify({"error": f"ZIP code {zipcode} not found"}), 404
 
+@app.route('/api/zip-codes/bounds')
+def get_zip_codes_by_bounds():
+    """Get ZIP codes within geographic bounds"""
+    north = request.args.get('north', type=float)
+    south = request.args.get('south', type=float)
+    east = request.args.get('east', type=float)
+    west = request.args.get('west', type=float)
+    
+    if None in [north, south, east, west]:
+        return jsonify({"error": "All bound parameters required"}), 400
+    
+    logger.info(f"Fetching ZIP codes for bounds: N={north}, S={south}, E={east}, W={west}")
+    
+    data = get_cached_data('geojson', 'zip_codes')
+    if not data:
+        return jsonify({"error": "Failed to load ZIP codes data"}), 500
+    
+    results = []
+    for feature in data.get('features', []):
+        if check_feature_in_bounds(feature, north, south, east, west):
+            results.append(feature)
+    
+    logger.info(f"Found {len(results)} ZIP codes out of {len(data.get('features', []))} total")
+    
+    return jsonify({
+        "dataset": "zip_codes",
+        "bounds": {"north": north, "south": south, "east": east, "west": west},
+        "count": len(results),
+        "features": results
+    })
+
+
 # Market Regions endpoints (renamed from TMO regions)
 @app.route('/api/market-regions')
 def get_all_market_regions():
@@ -243,30 +275,142 @@ def get_market_region_by_property(name, value):
     })
 
 # CDC Neighborhoods endpoints
+# @app.route('/api/cdc-neighborhoods')
+# def get_all_cdc_neighborhoods():
+#     """Get CDC neighborhoods with pagination"""
+#     data = get_cached_data('geojson', 'cdc_neighborhoods')
+#     if not data:
+#         return jsonify({"error": "Failed to load CDC neighborhoods data"}), 500
+
+#     features = data.get('features', [])
+
+#     # Pagination parameters
+#     limit = request.args.get('limit', default=1000, type=int)   # default: 1000 features
+#     offset = request.args.get('offset', default=0, type=int)    # default: start from 0
+
+#     # Slice features safely
+#     paginated_features = features[offset:offset + limit]
+
+#     return jsonify({
+#         "dataset": "cdc_neighborhoods",
+#         "total_count": len(features),         # total features in dataset
+#         "returned_count": len(paginated_features),  # features in this response
+#         "offset": offset,
+#         "limit": limit,
+#         "features": paginated_features
+#     })
+
 @app.route('/api/cdc-neighborhoods')
 def get_all_cdc_neighborhoods():
-    """Get CDC neighborhoods with pagination"""
+    """Get all CDC neighborhoods"""
     data = get_cached_data('geojson', 'cdc_neighborhoods')
     if not data:
         return jsonify({"error": "Failed to load CDC neighborhoods data"}), 500
-
-    features = data.get('features', [])
-
-    # Pagination parameters
-    limit = request.args.get('limit', default=1000, type=int)   # default: 1000 features
-    offset = request.args.get('offset', default=0, type=int)    # default: start from 0
-
-    # Slice features safely
-    paginated_features = features[offset:offset + limit]
-
+    
     return jsonify({
         "dataset": "cdc_neighborhoods",
-        "total_count": len(features),         # total features in dataset
-        "returned_count": len(paginated_features),  # features in this response
-        "offset": offset,
-        "limit": limit,
-        "features": paginated_features
+        "count": len(data.get('features', [])),
+        "features": data.get('features', [])
     })
+
+# Add this helper function after your existing functions in app.py
+
+def check_feature_in_bounds(feature, north, south, east, west):
+    """Check if a GeoJSON feature intersects with given bounds"""
+    try:
+        geometry = feature.get('geometry', {})
+        if not geometry:
+            return False
+        
+        geom_type = geometry.get('type')
+        coordinates = geometry.get('coordinates', [])
+        
+        if geom_type == 'Polygon':
+            # For Polygon: coordinates is [exterior_ring, hole1, hole2, ...]
+            # exterior_ring is [[lng1, lat1], [lng2, lat2], ...]
+            if coordinates and len(coordinates) > 0:
+                exterior_ring = coordinates[0]  # Get the exterior ring
+                for coord_pair in exterior_ring:
+                    if len(coord_pair) >= 2:  # Make sure it has lng, lat
+                        lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                        if west <= lng <= east and south <= lat <= north:
+                            return True
+        
+        elif geom_type == 'MultiPolygon':
+            # For MultiPolygon: coordinates is [polygon1, polygon2, ...]
+            # Each polygon is [exterior_ring, hole1, hole2, ...]
+            for polygon in coordinates:
+                if polygon and len(polygon) > 0:
+                    exterior_ring = polygon[0]  # Get the exterior ring of each polygon
+                    for coord_pair in exterior_ring:
+                        if len(coord_pair) >= 2:  # Make sure it has lng, lat
+                            lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                            if west <= lng <= east and south <= lat <= north:
+                                return True
+        
+        elif geom_type == 'Point':
+            # For Point: coordinates is [lng, lat]
+            if len(coordinates) >= 2:
+                lng, lat = float(coordinates[0]), float(coordinates[1])
+                return west <= lng <= east and south <= lat <= north
+        
+        elif geom_type == 'MultiPoint':
+            # For MultiPoint: coordinates is [[lng1, lat1], [lng2, lat2], ...]
+            for coord_pair in coordinates:
+                if len(coord_pair) >= 2:
+                    lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                    if west <= lng <= east and south <= lat <= north:
+                        return True
+        
+        return False
+        
+    except (IndexError, TypeError, KeyError, ValueError) as e:
+        logger.warning(f"Error checking bounds for feature: {str(e)}")
+        return False
+
+
+# Add this new endpoint to your app.py
+
+@app.route('/api/cdc-neighborhoods/bounds')
+def get_cdc_neighborhoods_by_bounds():
+    """Get CDC neighborhoods within geographic bounds"""
+    # Get bounds parameters
+    north = request.args.get('north', type=float)
+    south = request.args.get('south', type=float)
+    east = request.args.get('east', type=float)
+    west = request.args.get('west', type=float)
+    
+    if None in [north, south, east, west]:
+        return jsonify({"error": "All bound parameters (north, south, east, west) are required"}), 400
+    
+    logger.info(f"Fetching neighborhoods for bounds: N={north}, S={south}, E={east}, W={west}")
+    
+    data = get_cached_data('geojson', 'cdc_neighborhoods')
+    if not data:
+        return jsonify({"error": "Failed to load CDC neighborhoods data"}), 500
+    
+    results = []
+    total_features = len(data.get('features', []))
+    
+    for feature in data.get('features', []):
+        if check_feature_in_bounds(feature, north, south, east, west):
+            results.append(feature)
+    
+    logger.info(f"Found {len(results)} neighborhoods out of {total_features} total features")
+    
+    return jsonify({
+        "dataset": "cdc_neighborhoods",
+        "bounds": {
+            "north": north,
+            "south": south,
+            "east": east,
+            "west": west
+        },
+        "total_features": total_features,
+        "count": len(results),
+        "features": results
+    })
+
 
 
 @app.route('/api/cdc-neighborhoods/id/<int:id>')
