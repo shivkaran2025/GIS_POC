@@ -3,13 +3,15 @@ const API_BASE_URL = "http://localhost:5000";
 // Market Regions API
 export const getMarketRegions = async (signal) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/market-regions`, { signal });
+    const response = await fetch(`${API_BASE_URL}/api/market-regions`, {
+      signal,
+    });
     if (!response.ok) throw new Error("Failed to fetch market regions");
     return await response.json();
   } catch (error) {
-    if (error.name === "AbortError") return null; // ignore aborted
+    if (error.name === "AbortError") return null;
     console.error("Error fetching market regions:", error);
-    throw error;
+    return null;
   }
 };
 
@@ -25,14 +27,15 @@ export const getMarketRegionById = async (marketName, signal) => {
   } catch (error) {
     if (error.name === "AbortError") return null;
     console.error("Error fetching market region:", error);
-    throw error;
+    return null;
   }
 };
 
 // CDC Neighborhoods API
 export const getCdcNeighborhoods = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/cdc-neighborhoods`);
+    const response = await fetch(`#`);
+    // const response = await fetch(`${API_BASE_URL}/api/cdc-neighborhoods`);
     if (!response.ok) throw new Error("Failed to fetch CDC neighborhoods");
     return await response.json();
   } catch (error) {
@@ -43,7 +46,9 @@ export const getCdcNeighborhoods = async () => {
 
 export const getCdcNeighborhoodById = async (id) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/cdc-neighborhoods/id/${id}`);
+    const response = await fetch(
+      `${API_BASE_URL}/api/cdc-neighborhoods/id/${id}`
+    );
     if (!response.ok) throw new Error("Failed to fetch CDC neighborhood");
     return await response.json();
   } catch (error) {
@@ -57,35 +62,25 @@ export const getCdcNeighborhoodById = async (id) => {
 export const getCdcNeighborhoodsByBounds = async (bounds, signal) => {
   try {
     const { north, south, east, west } = bounds;
-    
-    console.log("Fetching neighborhoods for bounds:", bounds);
-    
     const response = await fetch(
       `${API_BASE_URL}/api/cdc-neighborhoods/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
       { signal }
     );
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    console.log(`Received ${data.count} neighborhoods for current bounds`);
-    
-    return data;
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    return await response.json();
   } catch (error) {
     if (error.name === "AbortError") return null;
     console.error("Error fetching CDC neighborhoods by bounds:", error);
-    throw error;
+    return null;
   }
 };
-
-
 
 // Site Locations API
 export const getSiteLocations = async (signal) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/site-locations`, { signal });
+    const response = await fetch(`${API_BASE_URL}/api/site-locations`, {
+      signal,
+    });
     if (!response.ok) throw new Error("Failed to fetch site locations");
     return await response.json();
   } catch (error) {
@@ -95,18 +90,24 @@ export const getSiteLocations = async (signal) => {
   }
 };
 
-export const getSiteLocationsByCoordinates = async (lat, lng, radius = 10, signal) => {
+export const getSiteLocationsByCoordinates = async (
+  lat,
+  lng,
+  radius = 10,
+  signal
+) => {
   try {
     const response = await fetch(
       `${API_BASE_URL}/api/site-locations/coordinates?lat=${lat}&lng=${lng}&radius=${radius}`,
       { signal }
     );
-    if (!response.ok) throw new Error("Failed to fetch site locations by coordinates");
+    if (!response.ok)
+      throw new Error("Failed to fetch site locations by coordinates");
     return await response.json();
   } catch (error) {
     if (error.name === "AbortError") return null;
     console.error("Error fetching site locations by coordinates:", error);
-    throw error;
+    return null;
   }
 };
 
@@ -129,7 +130,9 @@ export const getSiteById = async (siteId, signal) => {
 export const search = async (query, dataset = "all", signal) => {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&dataset=${dataset}`,
+      `${API_BASE_URL}/api/search?q=${encodeURIComponent(
+        query
+      )}&dataset=${dataset}`,
       { signal }
     );
     if (!response.ok) throw new Error("Failed to search");
@@ -140,7 +143,6 @@ export const search = async (query, dataset = "all", signal) => {
     throw error;
   }
 };
-
 
 // ZIP Codes API (NEW)
 export const getZipCodes = async (signal) => {
@@ -159,49 +161,46 @@ export const getZipCodes = async (signal) => {
 export const getZipCodesByBounds = async (bounds, signal) => {
   try {
     const { north, south, east, west } = bounds;
-    console.log("Fetching ZIP codes for bounds:", bounds);
-    
-    const response = await fetch(
-      `${API_BASE_URL}/api/zip-codes/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
-      { signal }
-    );
-    
-    if (!response.ok) {
-      console.warn("Bounds endpoint not available, falling back to all ZIP codes");
-      return await getZipCodes(signal);
-    }
-    
-    const data = await response.json();
-    console.log(`Received ${data.count} ZIP codes for current bounds`);
-    return data;
+    const response = await fetch(`#`, { signal });
+    // const response = await fetch(
+    //   `${API_BASE_URL}/api/zip-codes/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
+    //   { signal }
+    // );
+    if (!response.ok) throw new Error("Failed to fetch ZIP codes by bounds");
+    return await response.json();
   } catch (error) {
     if (error.name === "AbortError") return null;
     console.error("Error fetching ZIP codes by bounds:", error);
-    return await getZipCodes(signal);
+    return null;
   }
 };
 
 // Helper function to get data by zoom level
-export const getDataByZoomLevel = async (zoomLevel, bounds = null, signal) => {
-  try {
-    if (zoomLevel < 30.0) {
-      return await getMarketRegions(signal);
-    } else {
-      if (bounds) {
-        const centerLat = (bounds[0][1] + bounds[1][1]) / 2;
-        const centerLng = (bounds[0][0] + bounds[1][0]) / 2;
-        const radius =
-          Math.max(
-            Math.abs(bounds[1][1] - bounds[0][1]),
-            Math.abs(bounds[1][0] - bounds[0][0])
-          ) / 2;
-        return await getSiteLocationsByCoordinates(centerLat, centerLng, radius, signal);
-      }
-      return await getSiteLocations(signal);
-    }
-  } catch (error) {
-    if (error.name === "AbortError") return null;
-    console.error("Error getting data by zoom level:", error);
-    throw error;
-  }
-};
+// export const getDataByZoomLevel = async (zoomLevel, bounds = null, signal) => {
+//   try {
+//     if (zoomLevel < 30.0) {
+//       return await getMarketRegions(signal);
+//     } else {
+//       if (bounds) {
+//         const centerLat = (bounds[0][1] + bounds[1][1]) / 2;
+//         const centerLng = (bounds[0][0] + bounds[1][0]) / 2;
+//         const radius =
+//           Math.max(
+//             Math.abs(bounds[1][1] - bounds[0][1]),
+//             Math.abs(bounds[1][0] - bounds[0][0])
+//           ) / 2;
+//         return await getSiteLocationsByCoordinates(
+//           centerLat,
+//           centerLng,
+//           radius,
+//           signal
+//         );
+//       }
+//       return await getSiteLocations(signal);
+//     }
+//   } catch (error) {
+//     if (error.name === "AbortError") return null;
+//     console.error("Error getting data by zoom level:", error);
+//     throw error;
+//   }
+// };
