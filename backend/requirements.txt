@@ -1,4 +1,18 @@
+# Core Flask dependencies
 Flask==2.3.3
 Werkzeug==2.3.7
-requests==2.31.0
 Flask-CORS==4.0.0
+Flask-SQLAlchemy==3.1.1
+
+# Database
+PyMySQL==1.1.0
+cryptography==41.0.8
+
+# HTTP requests
+requests==2.31.0
+
+# Configuration
+python-dotenv==1.0.0
+
+# Production WSGI server (optional)
+# gunicorn==21.2.0

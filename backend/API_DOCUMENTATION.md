@@ -1,313 +1,280 @@
-  # GeoJSON & Site Location API Documentation
+# GIS POC API Documentation
 
-  ## Overview
+## Base URL
+```
+http://localhost:5000
+```
 
-  This API serves geographic data from GeoJSON files and site location data from CSV files. It provides endpoints for accessing ZIP codes, market regions, CDC neighborhoods, and site locations with comprehensive search capabilities.
+## Core Endpoints
 
-  **Base URL:** `http://localhost:5000`
+### `GET /`
+Returns API information and available endpoints.
 
-  ## API Information
-
-  ### GET /
-
-  Returns API information and available endpoints.
-
-  **Response:**
-  ```json
-  {
-    "name": "GeoJSON & Site Location API",
-    "version": "2.0",
-    "description": "API for serving geographic data from GeoJSON files and site location data from CSV",
-    "datasets": {
-      "zip_codes": "ZIP code boundaries and information",
-      "market_regions": "Market region boundaries and information",
-      "cdc_neighborhoods": "CDC neighborhood boundaries and information",
-      "site_locations": "Site locations with latitude and longitude coordinates"
+**Response:**
+```json
+{
+  "service": "GIS POC API",
+  "version": "1.0.0",
+  "endpoints": {
+    "geojson": {
+      "method": "GET",
+      "url": "/api/geojson",
+      "description": "Get GeoJSON data with spatial filtering"
     },
-    "endpoints": {
-      "base": "/",
-      "zip_codes": {
-        "all": "/api/zip-codes",
-        "by_id": "/api/zip-codes/id/{id}",
-        "by_zipcode": "/api/zip-codes/zipcode/{zipcode}"
-      },
-      "market_regions": {
-        "all": "/api/market-regions",
-        "by_id": "/api/market-regions/id/{id}",
-        "by_property": "/api/market-regions/property/{name}/{value}"
-      },
-      "cdc_neighborhoods": {
-        "all": "/api/cdc-neighborhoods",
-        "by_id": "/api/cdc-neighborhoods/id/{id}",
-        "by_property": "/api/cdc-neighborhoods/property/{name}/{value}"
-      },
-      "site_locations": {
-        "all": "/api/site-locations",
-        "by_site_id": "/api/site-locations/site/{site_id}",
-        "by_coordinates": "/api/site-locations/coordinates?lat={lat}&lng={lng}&radius={radius}"
-      },
-      "search": {
-        "cross_dataset": "/api/search?q={query}&dataset={dataset}",
-        "all_datasets": "/api/search?q={query}"
-      }
-    }
-  }
-  ```
-
-  ## Endpoints
-
-  ### ZIP Codes
-
-  #### GET /api/zip-codes
-  Returns all ZIP code features.
-
-  #### GET /api/zip-codes/id/{id}
-  Returns a specific ZIP code by OBJECTID.
-
-  #### GET /api/zip-codes/zipcode/{zipcode}
-  Returns a specific ZIP code by ZIPCODE.
-
-  **Example Response:**
-  ```json
-  {
-    "dataset": "zip_codes",
-    "feature": {
-      "type": "Feature",
-      "geometry": {
-        "type": "MultiPolygon",
-        "coordinates": [[[[-77.02541798499993, 38.82846284500005], ...]]]
-      },
-      "properties": {
-        "OBJECTID": 493,
-        "ZIPCODE": 20375,
-        "NAME": "NAVAL RESEARCH LABRATORY",
-        "LABEL": 20375,
-        "ZIP_CODE_TEXT": "20375"
-      }
-    }
-  }
-  ```
-
-  ### Market Regions
-
-  #### GET /api/market-regions
-  Returns all market region features.
-
-  #### GET /api/market-regions/id/{market_name}
-  Returns a specific market region by Market name (handles spaces with URL encoding).
-
-  #### GET /api/market-regions/property/{name}/{value}
-  Returns market regions by property name and value.
-
-  **Example Response:**
-  ```json
-  {
-    "dataset": "market_regions",
-    "feature": {
-      "type": "Feature",
-      "geometry": {
-        "type": "MultiPolygon",
-        "coordinates": [[[[-149.070836, 63.080715], ...]]]
-      },
-      "properties": {
-        "Region": "WEST",
-        "Market": "ALASKA",
-        "Sales_Mark": "Alaska, AK",
-        "Eng_Market": "Alaska AK",
-        "Market_Area": "ALASKA",
-        "Market_Abb": "AK",
-        "Longitude": -149.070836,
-        "Latitude": 63.080715
-      }
-    }
-  }
-  ```
-
-  ### CDC Neighborhoods
-
-  #### GET /api/cdc-neighborhoods
-  Returns all CDC neighborhood features.
-
-  #### GET /api/cdc-neighborhoods/id/{id}
-  Returns a specific CDC neighborhood by ID.
-
-  #### GET /api/cdc-neighborhoods/property/{name}/{value}
-  Returns CDC neighborhoods by property name and value.
-
-  **Example Response:**
-  ```json
-  {
-    "dataset": "cdc_neighborhoods",
-    "feature": {
-      "type": "Feature",
-      "geometry": {
-        "type": "Polygon",
-        "coordinates": [[[-77.123, 38.456], [-77.124, 38.457], ...]]
-      },
-      "properties": {
-        "OBJECTID": 1,
-        "NEIGHBORHOOD_NAME": "Downtown",
-        "CDC_ID": "CDC001",
-        "POPULATION": 15000
-      }
-    }
-  }
-  ```
-
-  ### Site Locations
-
-  #### GET /api/site-locations
-  Returns all site locations.
-
-  #### GET /api/site-locations/site/{site_id}
-  Returns a specific site by site ID.
-
-  #### GET /api/site-locations/coordinates
-  Returns sites within a radius of given coordinates.
-
-  **Parameters:**
-  - `lat` (float): Latitude coordinate
-  - `lng` (float): Longitude coordinate
-  - `radius` (float, optional): Search radius in degrees (default: 1.0)
-
-  **Example Request:**
-  ```
-  GET /api/site-locations/coordinates?lat=40.037362&lng=-75.214826&radius=0.1
-  ```
-
-  **Example Response:**
-  ```json
-  {
-    "dataset": "site_locations",
-    "center": {
-      "latitude": 40.037362,
-      "longitude": -75.214826
+    "kpi_routes": {
+      "description": "KPI data endpoints (see /api/kpi/*)"
     },
-    "radius": 0.1,
-    "count": 5,
-    "sites": [
-      {
-        "site_id": "PHS0415A",
-        "s_site_latitude": "40.037362",
-        "s_site_longitude": "-75.214826"
-      }
-    ]
+    "ui_compatibility": {
+      "description": "UI compatibility endpoints for existing frontend"
+    }
+  },
+  "data_sources": {
+    "zip_codes": 1234,
+    "market_regions": 567,
+    "cdc_neighborhoods": 890,
+    "site_locations": 123
   }
-  ```
+}
+```
 
-  ### Search
+### `GET /health`
+Health check endpoint for monitoring and load balancers.
 
-  #### GET /api/search
-  Searches across datasets for matching features.
-
-  **Parameters:**
-  - `q` (string, required): Search query
-  - `dataset` (string, optional): Specific dataset to search (default: "all")
-
-  **Available dataset values:**
-  - `all`: Search all datasets
-  - `zip_codes`: Search only ZIP codes
-  - `market_regions`: Search only market regions
-  - `cdc_neighborhoods`: Search only CDC neighborhoods
-  - `site_locations`: Search only site locations
-
-  **Example Request:**
-  ```
-  GET /api/search?q=20375&dataset=zip_codes
-  ```
-
-  **Example Response:**
-  ```json
-  {
-    "query": "20375",
-    "dataset": "zip_codes",
-    "count": 1,
-    "results": [
-      {
-        "dataset": "zip_codes",
-        "feature": {
-          "type": "Feature",
-          "properties": {
-            "OBJECTID": 493,
-            "ZIPCODE": 20375,
-            "NAME": "NAVAL RESEARCH LABRATORY"
-          }
-        }
-      }
-    ]
+**Response:**
+```json
+{
+  "success": true,
+  "message": "GIS POC API is running",
+  "timestamp": 1703123456.789,
+  "data_loaded": {
+    "zip_codes": true,
+    "market_regions": true,
+    "cdc_neighborhoods": true,
+    "site_locations": true
   }
-  ```
+}
+```
 
-  ## Error Responses
+### `GET /api/geojson`
+Retrieve GeoJSON data with spatial filtering.
 
-  All endpoints return consistent error responses:
+**Parameters:**
+- `dataset` (optional): `zip_codes`, `market_regions`, `cdc_neighborhoods` (default: `cdc_neighborhoods`)
+- `lat` (optional): Latitude for spatial filtering
+- `lng` (optional): Longitude for spatial filtering  
+- `radius` (optional): Search radius in degrees (default: 0.1)
 
-  **404 Not Found:**
-  ```json
-  {
-    "error": "ZIP code 99999 not found"
-  }
-  ```
+**Example:**
+```
+GET /api/geojson?dataset=zip_codes&lat=40.7128&lng=-74.0060&radius=0.05
+```
 
-  **400 Bad Request:**
-  ```json
-  {
-    "error": "Query parameter 'q' is required"
-  }
-  ```
+## KPI Data Endpoints
 
-  **500 Internal Server Error:**
-  ```json
-  {
-    "error": "Failed to load ZIP codes data"
-  }
-  ```
+All KPI endpoints support fetching by ID and by specific ID types:
 
-  ## Usage Examples
+### Market KPI
+- `GET /api/kpi/market/<id>` - Get market KPI by record ID
+- `GET /api/kpi/market/market_id/<market_id>` - Get market KPI by market_id
 
-  ### cURL Examples
+### ZIP KPI
+- `GET /api/kpi/zip/<id>` - Get ZIP KPI by record ID
+- `GET /api/kpi/zip/zip_id/<zip_id>` - Get ZIP KPI by zip_id
 
-  ```bash
-  # Get all ZIP codes
-  curl http://localhost:5000/api/zip-codes
+### HEX KPI
+- `GET /api/kpi/hex/<id>` - Get HEX KPI by record ID
+- `GET /api/kpi/hex/hex_id/<hex_id>` - Get HEX KPI by hex_id
 
-  # Get specific ZIP code
-  curl http://localhost:5000/api/zip-codes/zipcode/20375
+### Neighborhood KPI
+- `GET /api/kpi/neighborhood/<id>` - Get neighborhood KPI by record ID
+- `GET /api/kpi/neighborhood/neighborhood_id/<neighborhood_id>` - Get neighborhood KPI by neighborhood_id
 
-  # Get market region by name
-  curl http://localhost:5000/api/market-regions/id/ALASKA
+### Site KPI
+- `GET /api/kpi/site/<id>` - Get site KPI by record ID
+- `GET /api/kpi/site/site_id/<site_id>` - Get site KPI by site_id
 
-  # Search for sites near coordinates
-  curl "http://localhost:5000/api/site-locations/coordinates?lat=40.037362&lng=-75.214826&radius=0.1"
+### Generic Endpoints
+- `GET /api/kpi/<kpi_type>/<id>` - Generic endpoint for any KPI type
+- `GET /api/kpi/<kpi_type>/<id_type>_id/<id_value>` - Generic endpoint for any ID type
 
-  # Search across all datasets
-  curl "http://localhost:5000/api/search?q=Washington"
-  ```
+**Valid KPI Types:** `market`, `zip`, `hex`, `neighborhood`, `site`
 
-  ### JavaScript Examples
+## UI Compatibility Endpoints
 
-  ```javascript
-  // Fetch ZIP code data
-  fetch('http://localhost:5000/api/zip-codes/zipcode/20375')
-    .then(response => response.json())
-    .then(data => console.log(data));
+These endpoints maintain compatibility with existing frontend applications:
 
-  // Search for sites
-  fetch('http://localhost:5000/api/site-locations/site/CTNH515A')
-    .then(response => response.json())
-    .then(data => console.log(data));
-  ```
+### Market Regions
+- `GET /api/market-regions` - Get all market regions
+- `GET /api/market-regions/id/<market_name>` - Get market region by name
 
-  ## Data Sources
+### CDC Neighborhoods
+- `GET /api/cdc-neighborhoods` - Get all CDC neighborhoods
+- `GET /api/cdc-neighborhoods/id/<neighborhood_id>` - Get neighborhood by ID
+- `GET /api/cdc-neighborhoods/bounds` - Get neighborhood bounds
 
-  - **ZIP Codes**: `Zip_Codes.geojson` - US ZIP code boundaries
-  - **Market Regions**: `tmo_region_market.json` - Market region boundaries
-  - **CDC Neighborhoods**: `CDC_V3_NEIGHBORHOODS_SHAPEFILE.json` - CDC neighborhood boundaries
-  - **Site Locations**: `site_lat_long_08132025.csv` - Site coordinates
+### Site Locations
+- `GET /api/site-locations` - Get all site locations
+- `GET /api/site-locations/coordinates` - Get sites by coordinates
+- `GET /api/site-locations/site/<site_id>` - Get site by ID
 
-  ## Performance Notes
+### ZIP Codes
+- `GET /api/zip-codes` - Get all ZIP codes
+- `GET /api/zip-codes/bounds` - Get ZIP code bounds
 
-  - All data is cached in memory for fast access
-  - Large GeoJSON files are loaded once at startup
-  - CSV data is parsed and cached for efficient querying
-  - Search operations are performed on cached data
+### Search
+- `GET /api/search` - Cross-dataset search functionality
+
+## Sample API Responses
+
+### Successful Response (Single Record)
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "market_id": "Seattle WA",
+    "date_key": "2024-11-28",
+    "cap_dl_traffic_vol_mb_4g": 699768.0,
+    "cap_ul_traffic_vol_mb_4g": 123456.0,
+    "cap_dl_traffic_vol_mb_5g": 234567.0,
+    "cap_ul_traffic_vol_mb_5g": 34567.0,
+    "created_at": "2024-11-28T10:30:00",
+    "updated_at": "2024-11-28T10:30:00"
+  },
+  "message": "Market KPI record found"
+}
+```
+
+### Successful Response (Multiple Records)
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "site_id": "SE04615A",
+      "date_key": "2024-11-28",
+      "cap_dl_traffic_vol_mb_4g": 699768.0,
+      "cap_ul_traffic_vol_mb_4g": 123456.0
+    },
+    {
+      "id": 2,
+      "site_id": "SE04615A",
+      "date_key": "2024-11-29",
+      "cap_dl_traffic_vol_mb_4g": 712345.0,
+      "cap_ul_traffic_vol_mb_4g": 134567.0
+    }
+  ],
+  "count": 2,
+  "message": "Found 2 site KPI records"
+}
+```
+
+### Error Response (Record Not Found)
+```json
+{
+  "success": false,
+  "message": "Site KPI record with ID 999 not found"
+}
+```
+
+### Error Response (Invalid KPI Type)
+```json
+{
+  "success": false,
+  "message": "Invalid KPI type. Must be one of: market, zip, hex, neighborhood, site"
+}
+```
+
+### Error Response (Database Error)
+```json
+{
+  "success": false,
+  "message": "Database error: (pymysql.err.OperationalError) (1045, \"Access denied for user 'root'@'localhost'\")"
+}
+```
+
+## Database Tables
+
+The application works with 5 KPI tables:
+
+1. **market_kpi** - Market-level KPI data
+2. **zip_kpi** - ZIP code-level KPI data
+3. **hex_kpi** - Hex-level KPI data
+4. **neighborhood_kpi** - Neighborhood-level KPI data
+5. **site_kpi** - Site-level KPI data
+
+Each table supports queries by:
+- Primary key (`id`)
+- Specific ID field (`market_id`, `zip_id`, `hex_id`, `neighborhood_id`, `site_id`)
+
+## Error Handling
+
+### HTTP Status Codes
+
+| Code | Description | When Used |
+|------|-------------|-----------|
+| 200 | OK | Successful request |
+| 400 | Bad Request | Invalid parameters or request format |
+| 404 | Not Found | Resource not found |
+| 500 | Internal Server Error | Server-side error |
+
+### Common Error Responses
+
+#### Database Connection Error
+```json
+{
+  "success": false,
+  "message": "Database error: (pymysql.err.OperationalError) (1045, \"Access denied for user 'root'@'localhost'\")"
+}
+```
+
+#### Record Not Found
+```json
+{
+  "success": false,
+  "message": "Site KPI record with ID 999 not found"
+}
+```
+
+#### Invalid Parameters
+```json
+{
+  "success": false,
+  "message": "Invalid KPI type. Must be one of: market, zip, hex, neighborhood, site"
+}
+```
+
+## Rate Limiting
+
+Currently, no rate limiting is implemented. For production deployments, consider implementing rate limiting at the reverse proxy level (e.g., Nginx) or using Flask-Limiter.
+
+## Authentication
+
+Currently, no authentication is required. For production deployments, consider implementing:
+- API key authentication
+- JWT tokens
+- OAuth 2.0
+
+## CORS
+
+Cross-Origin Resource Sharing (CORS) is enabled for all origins in development. For production, configure specific allowed origins in the Flask-CORS settings.
+
+## Performance Considerations
+
+- GeoJSON data is loaded into memory on application startup
+- Large datasets may require pagination (not currently implemented)
+- Database queries are not cached (consider implementing Redis for caching)
+- Spatial filtering uses in-memory grid indexing for performance
+
+## Monitoring
+
+Use the `/health` endpoint for:
+- Load balancer health checks
+- Application monitoring
+- Data source availability verification
+- Uptime monitoring
+
+## API Versioning
+
+Currently using version 1.0.0. Future versions should maintain backward compatibility or use URL versioning (e.g., `/api/v2/`).
