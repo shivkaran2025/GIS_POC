@@ -722,9 +722,9 @@ def get_cdc_neighborhoods_by_bounds():
     logger.info(f"Found {len(results)} neighborhoods in {elapsed_time:.3f} seconds")
     
     # Optimize response size by limiting features if too many
-    if len(results) > max_features:
-        logger.warning(f"Limiting results from {len(results)} to {max_features} features")
-        results = results[:max_features]
+    # if len(results) > max_features:
+    #     logger.warning(f"Limiting results from {len(results)} to {max_features} features")
+    #     results = results[:max_features]
     
     # Check if client wants simplified geometry
     if simplify:
