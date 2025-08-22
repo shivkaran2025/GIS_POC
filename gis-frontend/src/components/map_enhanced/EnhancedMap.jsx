@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import MapGL from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import bbox from "@turf/bbox";
-import { hexGrid } from "@turf/turf";
 
 import {
   getMarketRegions,
@@ -70,6 +69,7 @@ const EnhancedMap = () => {
       try {
         const data = await getMarketRegions();
         if (data) setMarketData(data);
+        console.log("loadMarketData", data);
       } catch (error) {
         console.error("Error loading market data:", error);
       } finally {
@@ -167,6 +167,7 @@ const EnhancedMap = () => {
     try {
       const data = await getCdcNeighborhoodsByBounds({ north, south, east, west });
       if (data) {
+        console.log("loadZipCodes", data);
         setZipData(data);
         zipCacheRef.current[cacheKey] = data;
       }
@@ -190,6 +191,7 @@ const EnhancedMap = () => {
     try {
       const data = await getSiteLocationsByCoordinates(centerLat, centerLng, radius);
       if (data) {
+        // console.log("getSiteLocationsByCoordinates", data, siteData);
         setSiteData(data);
         siteCacheRef.current[cacheKey] = data;
       }

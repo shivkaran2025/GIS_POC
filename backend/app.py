@@ -498,7 +498,10 @@ def get_site_locations():
                 'message': 'Site locations data not available'
             }), 404
         
-        return jsonify(site_locations_data), 200
+        return jsonify({
+            'sites': site_locations_data,
+            'count': len(site_locations_data)
+        }), 200
         
     except Exception as e:
         logger.error(f"Error in get_site_locations: {str(e)}")
@@ -531,8 +534,8 @@ def get_site_locations_by_coordinates():
         filtered_sites = []
         for site in site_locations_data:
             try:
-                site_lat = float(site.get('latitude', 0))
-                site_lng = float(site.get('longitude', 0))
+                site_lat = float(site.get('s_site_latitude', 0))
+                site_lng = float(site.get('s_site_longitude', 0))
                 
                 # Calculate distance (simplified)
                 distance = ((lat - site_lat) ** 2 + (lng - site_lng) ** 2) ** 0.5
@@ -542,7 +545,10 @@ def get_site_locations_by_coordinates():
             except (ValueError, TypeError):
                 continue
         
-        return jsonify(filtered_sites), 200
+        return jsonify({
+            'sites': filtered_sites,
+            'count': len(filtered_sites)
+        }), 200
         
     except Exception as e:
         logger.error(f"Error in get_site_locations_by_coordinates: {str(e)}")
