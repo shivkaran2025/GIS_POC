@@ -5,6 +5,8 @@ import os
 import csv
 from typing import Dict, List, Optional, Any
 import logging
+import time
+from functools import lru_cache
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +29,269 @@ CSV_FILES = {
 # Cache for loaded data
 geojson_cache = {}
 csv_cache = {}
+
+# Spatial index for CDC neighborhoods
+cdc_spatial_index = None
+cdc_features_with_bounds = None
+cdc_grid_index = None
+
+# Query result cache for bounds queries
+bounds_query_cache = {}
+MAX_CACHE_SIZE = 1000  # Maximum number of cached queries
+
+# Grid-based spatial indexing for ultra-fast queries
+class SpatialGridIndex:
+    def __init__(self, features, grid_size=1.0):
+        self.grid_size = grid_size
+        self.grid = {}
+        self.features = features
+        
+        # Calculate global bounds
+        self.global_bounds = self._calculate_global_bounds(features)
+        
+        # Build grid
+        self._build_grid(features)
+    
+    def _calculate_global_bounds(self, features):
+        """Calculate global bounds of all features"""
+        min_lng, max_lng = float('inf'), float('-inf')
+        min_lat, max_lat = float('inf'), float('-inf')
+        
+        for feature in features:
+            bbox = self._get_feature_bbox(feature)
+            if bbox:
+                min_lng = min(min_lng, bbox['min_lng'])
+                max_lng = max(max_lng, bbox['max_lng'])
+                min_lat = min(min_lat, bbox['min_lat'])
+                max_lat = max(max_lat, bbox['max_lat'])
+        
+        return {
+            'min_lng': min_lng,
+            'max_lng': max_lng,
+            'min_lat': min_lat,
+            'max_lat': max_lat
+        }
+    
+    def _get_feature_bbox(self, feature):
+        """Get bounding box of a feature"""
+        geometry = feature.get('geometry', {})
+        if not geometry:
+            return None
+            
+        geom_type = geometry.get('type')
+        coordinates = geometry.get('coordinates', [])
+        
+        if geom_type in ['Polygon', 'MultiPolygon']:
+            return calculate_bounding_box(coordinates)
+        
+        return None
+    
+    def _get_grid_cells(self, bbox):
+        """Get grid cells that intersect with bounding box"""
+        cells = set()
+        
+        min_cell_lng = int(bbox['min_lng'] / self.grid_size)
+        max_cell_lng = int(bbox['max_lng'] / self.grid_size)
+        min_cell_lat = int(bbox['min_lat'] / self.grid_size)
+        max_cell_lat = int(bbox['max_lat'] / self.grid_size)
+        
+        for lng_cell in range(min_cell_lng, max_cell_lng + 1):
+            for lat_cell in range(min_cell_lat, max_cell_lat + 1):
+                cells.add((lng_cell, lat_cell))
+        
+        return cells
+    
+    def _build_grid(self, features):
+        """Build the spatial grid index"""
+        for i, feature in enumerate(features):
+            bbox = self._get_feature_bbox(feature)
+            if not bbox:
+                continue
+            
+            cells = self._get_grid_cells(bbox)
+            for cell in cells:
+                if cell not in self.grid:
+                    self.grid[cell] = []
+                self.grid[cell].append(i)
+        
+        logger.info(f"Built grid index with {len(self.grid)} cells")
+    
+    def query_bounds(self, north, south, east, west):
+        """Query features within bounds using grid index"""
+        query_bbox = {
+            'min_lng': west,
+            'max_lng': east,
+            'min_lat': south,
+            'max_lat': north
+        }
+        
+        # Get relevant grid cells
+        cells = self._get_grid_cells(query_bbox)
+        
+        # Collect candidate feature indices
+        candidate_indices = set()
+        for cell in cells:
+            if cell in self.grid:
+                candidate_indices.update(self.grid[cell])
+        
+        # Return candidate features
+        candidates = [self.features[i] for i in candidate_indices]
+        return candidates
+
+def calculate_bounding_box(coordinates):
+    """Calculate bounding box for a set of coordinates"""
+    if not coordinates:
+        return None
+    
+    # Flatten coordinates if they're nested
+    flat_coords = []
+    for coord in coordinates:
+        if isinstance(coord[0], (list, tuple)):
+            flat_coords.extend(coord)
+        else:
+            flat_coords.append(coord)
+    
+    if not flat_coords:
+        return None
+    
+    # Ensure all coordinates are valid numbers
+    valid_coords = []
+    for coord in flat_coords:
+        if len(coord) >= 2:
+            try:
+                lng, lat = float(coord[0]), float(coord[1])
+                valid_coords.append([lng, lat])
+            except (ValueError, TypeError):
+                continue
+    
+    if not valid_coords:
+        return None
+    
+    lngs = [coord[0] for coord in valid_coords]
+    lats = [coord[1] for coord in valid_coords]
+    
+    return {
+        'min_lng': min(lngs),
+        'max_lng': max(lngs),
+        'min_lat': min(lats),
+        'max_lat': max(lats)
+    }
+
+def build_spatial_index(features):
+    """Build a spatial index for faster bounds queries"""
+    indexed_features = []
+    
+    for i, feature in enumerate(features):
+        geometry = feature.get('geometry', {})
+        if not geometry:
+            continue
+            
+        geom_type = geometry.get('type')
+        coordinates = geometry.get('coordinates', [])
+        
+        if geom_type == 'Polygon':
+            bbox = calculate_bounding_box(coordinates)
+        elif geom_type == 'MultiPolygon':
+            bbox = calculate_bounding_box(coordinates)
+        else:
+            continue
+            
+        if bbox:
+            indexed_features.append({
+                'index': i,
+                'feature': feature,
+                'bbox': bbox
+            })
+    
+    logger.info(f"Built spatial index for {len(indexed_features)} features")
+    return indexed_features
+
+def check_bbox_intersection(bbox1, bbox2):
+    """Check if two bounding boxes intersect"""
+    return not (bbox1['max_lng'] < bbox2['min_lng'] or 
+                bbox1['min_lng'] > bbox2['max_lng'] or 
+                bbox1['max_lat'] < bbox2['min_lat'] or 
+                bbox1['min_lat'] > bbox2['max_lat'])
+
+def simplify_coordinates(coordinates, precision=4):
+    """Simplify coordinates by reducing precision"""
+    if isinstance(coordinates, list):
+        if len(coordinates) > 0 and isinstance(coordinates[0], (list, tuple)):
+            return [simplify_coordinates(coord, precision) for coord in coordinates]
+        else:
+            return [round(coord, precision) for coord in coordinates]
+    return coordinates
+
+def make_cache_key(north, south, east, west, max_features=1000, simplify=False):
+    """Create a cache key for bounds query"""
+    return f"{north:.4f}_{south:.4f}_{east:.4f}_{west:.4f}_{max_features}_{simplify}"
+
+def get_cached_bounds_result(cache_key):
+    """Get cached result for bounds query"""
+    return bounds_query_cache.get(cache_key)
+
+def cache_bounds_result(cache_key, result):
+    """Cache result for bounds query"""
+    if len(bounds_query_cache) >= MAX_CACHE_SIZE:
+        # Remove oldest entry (simple LRU)
+        oldest_key = next(iter(bounds_query_cache))
+        del bounds_query_cache[oldest_key]
+    
+    bounds_query_cache[cache_key] = result
+
+def check_feature_in_bounds_optimized(feature, north, south, east, west):
+    """Optimized bounds checking using pre-computed bounding boxes"""
+    geometry = feature.get('geometry', {})
+    if not geometry:
+        return False
+    
+    geom_type = geometry.get('type')
+    coordinates = geometry.get('coordinates', [])
+    
+    # Quick bounding box check first
+    query_bbox = {
+        'min_lng': west,
+        'max_lng': east,
+        'min_lat': south,
+        'max_lat': north
+    }
+    
+    # Calculate feature bbox
+    feature_bbox = calculate_bounding_box(coordinates)
+    if not feature_bbox:
+        return False
+    
+    # If bounding boxes don't intersect, feature is definitely not in bounds
+    if not check_bbox_intersection(feature_bbox, query_bbox):
+        return False
+    
+    # For more precise checking, do point-in-polygon test
+    # This is a simplified version - for production, consider using a proper geometry library
+    try:
+        if geom_type == 'Polygon':
+            if coordinates and len(coordinates) > 0:
+                exterior_ring = coordinates[0]
+                for coord_pair in exterior_ring:
+                    if len(coord_pair) >= 2:
+                        lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                        if west <= lng <= east and south <= lat <= north:
+                            return True
+        
+        elif geom_type == 'MultiPolygon':
+            for polygon in coordinates:
+                if polygon and len(polygon) > 0:
+                    exterior_ring = polygon[0]
+                    for coord_pair in exterior_ring:
+                        if len(coord_pair) >= 2:
+                            lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                            if west <= lng <= east and south <= lat <= north:
+                                return True
+        
+        return False
+        
+    except (IndexError, TypeError, KeyError, ValueError) as e:
+        logger.warning(f"Error checking bounds for feature: {str(e)}")
+        return False
 
 def load_geojson_file(file_path: str) -> Dict[str, Any]:
     """Load and parse a GeoJSON file"""
@@ -65,6 +330,35 @@ def get_cached_data(data_type: str, file_key: str):
         return csv_cache[file_key]
     return None
 
+def initialize_cdc_spatial_index():
+    """Initialize spatial index for CDC neighborhoods"""
+    global cdc_spatial_index, cdc_features_with_bounds, cdc_grid_index
+    
+    if cdc_spatial_index is None:
+        logger.info("Building spatial index for CDC neighborhoods...")
+        start_time = time.time()
+        
+        data = get_cached_data('geojson', 'cdc_neighborhoods')
+        if data:
+            features = data.get('features', [])
+            
+            # Build both indexing systems for comparison
+            cdc_features_with_bounds = build_spatial_index(features)
+            
+            # Build grid index for ultra-fast queries
+            logger.info("Building grid-based spatial index...")
+            grid_start = time.time()
+            cdc_grid_index = SpatialGridIndex(features, grid_size=0.5)  # 0.5 degree grid cells
+            grid_elapsed = time.time() - grid_start
+            logger.info(f"Grid index built in {grid_elapsed:.2f} seconds")
+            
+            cdc_spatial_index = True
+            
+            elapsed = time.time() - start_time
+            logger.info(f"All spatial indexes built in {elapsed:.2f} seconds")
+        else:
+            logger.error("Failed to load CDC neighborhoods data for spatial indexing")
+
 def search_features(features: List[Dict], query: str, search_fields: List[str] = None) -> List[Dict]:
     """Search features by query in specified fields"""
     if not search_fields:
@@ -95,6 +389,15 @@ def search_features(features: List[Dict], query: str, search_fields: List[str] =
                     break
     
     return results
+
+# Initialize spatial index on startup
+def setup_spatial_index():
+    """Initialize spatial index before first request"""
+    initialize_cdc_spatial_index()
+
+# Initialize on app startup
+with app.app_context():
+    setup_spatial_index()
 
 @app.route('/')
 def index():
@@ -373,7 +676,9 @@ def check_feature_in_bounds(feature, north, south, east, west):
 
 @app.route('/api/cdc-neighborhoods/bounds')
 def get_cdc_neighborhoods_by_bounds():
-    """Get CDC neighborhoods within geographic bounds"""
+    """Get CDC neighborhoods within geographic bounds - OPTIMIZED VERSION"""
+    start_time = time.time()
+    
     # Get bounds parameters
     north = request.args.get('north', type=float)
     south = request.args.get('south', type=float)
@@ -383,22 +688,54 @@ def get_cdc_neighborhoods_by_bounds():
     if None in [north, south, east, west]:
         return jsonify({"error": "All bound parameters (north, south, east, west) are required"}), 400
     
+    # Get additional parameters
+    max_features = request.args.get('max_features', type=int, default=1000)
+    simplify = request.args.get('simplify', type=bool, default=False)
+    
+    # Check cache first
+    cache_key = make_cache_key(north, south, east, west, max_features, simplify)
+    cached_result = get_cached_bounds_result(cache_key)
+    if cached_result:
+        logger.info(f"Cache hit for bounds query: {cache_key}")
+        return jsonify(cached_result)
+    
     logger.info(f"Fetching neighborhoods for bounds: N={north}, S={south}, E={east}, W={west}")
     
-    data = get_cached_data('geojson', 'cdc_neighborhoods')
-    if not data:
-        return jsonify({"error": "Failed to load CDC neighborhoods data"}), 500
+    # Ensure spatial index is initialized
+    if cdc_spatial_index is None:
+        initialize_cdc_spatial_index()
     
+    if not cdc_grid_index:
+        return jsonify({"error": "Grid index not available"}), 500
+    
+    # Use grid index for ultra-fast candidate selection
+    candidate_features = cdc_grid_index.query_bounds(north, south, east, west)
+    logger.info(f"Grid index found {len(candidate_features)} candidate features")
+    
+    # Further refine with precise bounds checking (only on candidates)
     results = []
-    total_features = len(data.get('features', []))
-    
-    for feature in data.get('features', []):
-        if check_feature_in_bounds(feature, north, south, east, west):
+    for feature in candidate_features:
+        if check_feature_in_bounds_optimized(feature, north, south, east, west):
             results.append(feature)
     
-    logger.info(f"Found {len(results)} neighborhoods out of {total_features} total features")
+    elapsed_time = time.time() - start_time
+    logger.info(f"Found {len(results)} neighborhoods in {elapsed_time:.3f} seconds")
     
-    return jsonify({
+    # Optimize response size by limiting features if too many
+    if len(results) > max_features:
+        logger.warning(f"Limiting results from {len(results)} to {max_features} features")
+        results = results[:max_features]
+    
+    # Check if client wants simplified geometry
+    if simplify:
+        # Simplify geometry by reducing coordinate precision
+        for feature in results:
+            if 'geometry' in feature and 'coordinates' in feature['geometry']:
+                feature['geometry']['coordinates'] = simplify_coordinates(
+                    feature['geometry']['coordinates'], precision=4
+                )
+    
+    response_data = {
         "dataset": "cdc_neighborhoods",
         "bounds": {
             "north": north,
@@ -406,11 +743,37 @@ def get_cdc_neighborhoods_by_bounds():
             "east": east,
             "west": west
         },
-        "total_features": total_features,
+        "total_features": len(cdc_grid_index.features),
+        "candidate_features": len(candidate_features),
         "count": len(results),
+        "query_time_ms": round(elapsed_time * 1000, 2),
+        "index_type": "grid",
+        "cached": False,
         "features": results
-    })
+    }
+    
+    # Cache the result
+    cache_bounds_result(cache_key, response_data)
+    
+    return jsonify(response_data)
 
+@app.route('/api/cdc-neighborhoods/performance')
+def get_cdc_performance_stats():
+    """Get performance statistics for CDC neighborhoods"""
+    stats = {
+        "spatial_index_built": cdc_spatial_index is not None,
+        "grid_index_built": cdc_grid_index is not None,
+        "total_features": len(cdc_grid_index.features) if cdc_grid_index else 0,
+        "cache_size": len(bounds_query_cache),
+        "max_cache_size": MAX_CACHE_SIZE,
+        "grid_cells": len(cdc_grid_index.grid) if cdc_grid_index else 0,
+        "grid_size": cdc_grid_index.grid_size if cdc_grid_index else None
+    }
+    
+    if cdc_grid_index:
+        stats["global_bounds"] = cdc_grid_index.global_bounds
+    
+    return jsonify(stats)
 
 
 @app.route('/api/cdc-neighborhoods/id/<int:id>')
