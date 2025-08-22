@@ -21,7 +21,7 @@ import File from "../assets/Action_Button_Compare_Country_Container.svg";
 import Bell from "../assets/Bell.svg";
 import Collapse from "../assets/collapse.svg";
 import { viewSizeCalculator } from "../utils/viewSizeCalculator";
-import Map from '../components/map/Map';
+import { EnhancedMap } from "../components/map_enhanced";
 
 const Dashboard = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -62,8 +62,8 @@ const Dashboard = () => {
             />
           </MiddleLeft>
 
-                  <MiddleCenter>
-                      <Map/>
+          <MiddleCenter>
+            <EnhancedMap />
           </MiddleCenter>
 
           <MiddleRight>
