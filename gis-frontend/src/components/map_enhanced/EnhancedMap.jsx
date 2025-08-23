@@ -258,106 +258,70 @@ const EnhancedMap = () => {
     setCurrentView("SITE");
   }, [getBoundsData, loadSites]);
 
-  // Handle map movement and zoom changes
-  const handleMove = useCallback(async (evt) => {
+  // Unified handler for map movement and data loading
+  const handleMapChange = useCallback(async (evt) => {
     // Skip if we're in the middle of a manual transition
     if (isManualTransition) {
       return;
     }
 
-    const zoom = evt.viewState.zoom;
+    const zoom = evt.viewState?.zoom || evt.target.getZoom();
     const map = evt.target;
-    console.log("handleMove", zoom, currentView, map);
+    console.log("handleMapChange", zoom, currentView, evt.type);
 
     try {
+      // Determine target view based on zoom level
+      let targetView = currentView;
       if (zoom < ZOOM_LEVELS.NATIONAL.max) {
-        if (currentView !== "NATIONAL") {
+        targetView = "NATIONAL";
+      } else if (zoom >= ZOOM_LEVELS.MARKET.min && zoom <= ZOOM_LEVELS.MARKET.max) {
+        targetView = "MARKET";
+      } else if (zoom >= ZOOM_LEVELS.ZIP.min && zoom <= ZOOM_LEVELS.ZIP.max) {
+        targetView = "ZIP";
+      } else if (zoom >= ZOOM_LEVELS.SITE.min) {
+        targetView = "SITE";
+      }
+
+      // Handle view transitions
+      if (targetView !== currentView) {
+        console.log(`View transition: ${currentView} → ${targetView}`);
+        
+        if (targetView === "NATIONAL") {
           setCurrentView("NATIONAL");
           setCurrentMarket(null);
           setCurrentZipCodes([]);
           setZipData(null);
           setSiteData(null);
-        }
-      } else if (zoom >= ZOOM_LEVELS.MARKET.min && zoom <= ZOOM_LEVELS.MARKET.max) {
-        if (currentView !== "MARKET") {
+        } else if (targetView === "MARKET") {
           setCurrentView("MARKET");
           setCurrentZipCodes([]);
           setSiteData(null);
-          
-          // Load ZIP codes for current market area
-          const bounds = map.getBounds();
-          await loadZipCodes({
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
-          });
-        }
-      } else if (zoom >= ZOOM_LEVELS.ZIP.min && zoom <= ZOOM_LEVELS.ZIP.max) {
-        if (currentView !== "ZIP") {
+        } else if (targetView === "ZIP") {
           setCurrentView("ZIP");
           setSiteData(null);
-          
-          // Load ZIP codes for current area
-          const bounds = map.getBounds();
-          await loadZipCodes({
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
-          });
-        }
-      } else if (zoom >= ZOOM_LEVELS.SITE.min) {
-        if (currentView !== "SITE") {
+        } else if (targetView === "SITE") {
           setCurrentView("SITE");
-          
-          // Load sites for current area
-          const { centerLat, centerLng, radius } = getBoundsData(map);
-          await loadSites(centerLat, centerLng, radius);
         }
       }
-    } catch (error) {
-      console.error("Error in handleMove:", error);
-      setLoading(false);
-    }
-  }, [currentView, loadZipCodes, loadSites, getBoundsData, isManualTransition]);
 
-  // Handle map drag to reload data for new area
-  const handleMapDrag = useCallback(async (evt) => {
-    // Skip if we're in the middle of a manual transition
-    if (isManualTransition) {
-      return;
-    }
-
-    const map = evt.target;
-    const zoom = map.getZoom();
-    console.log("handleMapDrag", zoom, currentView);
-
-    try {
-      if (zoom >= ZOOM_LEVELS.MARKET.min && zoom <= ZOOM_LEVELS.MARKET.max) {
-        const bounds = map.getBounds();
+      // Load data for current view (whether view changed or just area changed)
+      const bounds = map.getBounds();
+      if (targetView === "MARKET" || targetView === "ZIP") {
         await loadZipCodes({
           north: bounds.getNorth(),
           south: bounds.getSouth(),
           east: bounds.getEast(),
           west: bounds.getWest(),
         });
-      } else if (zoom >= ZOOM_LEVELS.ZIP.min && zoom <= ZOOM_LEVELS.ZIP.max) {
-        const bounds = map.getBounds();
-        await loadZipCodes({
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest(),
-        });
-      } else if (zoom >= ZOOM_LEVELS.SITE.min) {
+      } else if (targetView === "SITE") {
         const { centerLat, centerLng, radius } = getBoundsData(map);
         await loadSites(centerLat, centerLng, radius);
       }
     } catch (error) {
-      console.error("Error in handleMapDrag:", error);
+      console.error("Error in handleMapChange:", error);
+      setLoading(false);
     }
-  }, [loadZipCodes, loadSites, getBoundsData, isManualTransition, currentView]);
+  }, [currentView, loadZipCodes, loadSites, getBoundsData, isManualTransition]);
 
   // Handle mouse interactions for tooltips
   const handleMouseMove = useCallback((evt) => {
@@ -460,8 +424,8 @@ const EnhancedMap = () => {
         initialViewState={INITIAL_VIEW}
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
-        onMoveEnd={handleMove}
-        onDragEnd={handleMapDrag}
+        onMoveEnd={handleMapChange}
+        onDragEnd={handleMapChange}
         interactiveLayerIds={["market-fill", "zip-fill"]}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
