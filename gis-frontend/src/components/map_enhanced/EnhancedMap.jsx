@@ -20,7 +20,7 @@ const MAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json
 
 const INITIAL_VIEW = {
   longitude: -98,
-  latitude: 39,
+  latitude: 41,
   zoom: 3.5,
 };
 
@@ -48,6 +48,8 @@ const EnhancedMap = () => {
     y: 0,
   });
   const [isManualTransition, setIsManualTransition] = useState(false);
+  const [isControlHovered, setIsControlHovered] = useState(false);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
   console.log("currentView", currentView);
 
   const mapRef = useRef(null);
@@ -417,6 +419,31 @@ const EnhancedMap = () => {
     }
   };
 
+  // Reset view to national level
+  const handleResetView = useCallback(() => {
+    setCurrentView("NATIONAL");
+    setCurrentMarket(null);
+    setCurrentZipCodes([]);
+    setZipData(null);
+    setSiteData(null);
+  }, []);
+
+  // Handle control hover to hide tooltip
+  const handleControlHover = useCallback((isHovered) => {
+    setIsControlHovered(isHovered);
+    if (isHovered) {
+      setTooltip((prev) => ({ ...prev, visible: false }));
+    }
+  }, []);
+
+  // Handle header hover to hide tooltip
+  const handleHeaderHover = useCallback((isHovered) => {
+    setIsHeaderHovered(isHovered);
+    if (isHovered) {
+      setTooltip((prev) => ({ ...prev, visible: false }));
+    }
+  }, []);
+
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
       <MapGL
@@ -445,14 +472,14 @@ const EnhancedMap = () => {
       </MapGL>
 
       {/* Map Header */}
-      <MapHeader viewInfo={getViewInfo()} />
+      <MapHeader viewInfo={getViewInfo()} onHeaderHover={handleHeaderHover} />
 
       {/* Map Controls */}
-      <MapControls />
+      <MapControls mapRef={mapRef} onResetView={handleResetView} onControlHover={handleControlHover} />
 
       {/* Tooltip */}
       <MapTooltip
-        visible={tooltip.visible}
+        visible={tooltip.visible && !isControlHovered && !isHeaderHovered}
         content={tooltip.content}
         x={tooltip.x}
         y={tooltip.y}

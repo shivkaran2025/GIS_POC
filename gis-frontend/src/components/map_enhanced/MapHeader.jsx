@@ -1,10 +1,24 @@
 import React from "react";
 
-const MapHeader = ({ viewInfo }) => {
+const MapHeader = ({ viewInfo, onHeaderHover }) => {
   const { title, subtitle, description } = viewInfo;
+
+  const handleHeaderMouseEnter = () => {
+    if (onHeaderHover) {
+      onHeaderHover(true);
+    }
+  };
+
+  const handleHeaderMouseLeave = () => {
+    if (onHeaderHover) {
+      onHeaderHover(false);
+    }
+  };
 
   return (
     <div
+      onMouseEnter={handleHeaderMouseEnter}
+      onMouseLeave={handleHeaderMouseLeave}
       style={{
         position: "absolute",
         top: "72px",
