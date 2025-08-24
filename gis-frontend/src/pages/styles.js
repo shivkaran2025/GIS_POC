@@ -81,7 +81,11 @@ export const MiddleRight = styled.div`
 export const ChartSection = styled.div`
   width: ${viewSizeCalculator(363, true)};
   height: ${viewSizeCalculator(180, true)};
-  gap: ${viewSizeCalculator(20, true)};
+  gap: ${viewSizeCalculator(10, true)};
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
 `;
 
 export const Border = styled.div`

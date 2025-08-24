@@ -36,9 +36,13 @@ const Dashboard = () => {
   const [sitePoorChnlQlty, setSitePoorChnlQlty] = useState(345);
   const [avgSINR5G, setAvgSINR5G] = useState(16.78);
   const [avgSINR4G, setAvgSINR4G] = useState(6.75);
+  const [isData, setIsData] = useState("success");
+  const [market, setMarket] = useState("National");
 
   const handleMarketSelect = async (marketId) => {
+    setMarket(marketId);
     try {
+      setIsData("success");
       const response = await getMarketKpiByMarketId(marketId);
       console.log("Market KPI:", response);
       // 🔥 here you can also update state if you want to display the KPIs
@@ -52,6 +56,7 @@ const Dashboard = () => {
         setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g); // SINR 4G
       }
     } catch (error) {
+      setIsData("error");
       console.error("Error fetching KPI:", error);
     }
   };
@@ -79,24 +84,24 @@ const Dashboard = () => {
   };
 
   const handleViewChange = async (view, context) => {
-  console.log("Map View Changed:", view, context);
+    console.log("Map View Changed:", view, context);
 
-  try {
-    if (view === "MARKET" && context.marketId) {
-      await handleMarketSelect(context.marketId);
-    } else if (view === "ZIP" && context.zipIds?.length > 0) {
-      await handleZipSelect(context.zipIds[0]);
-    } else if (view === "NATIONAL") {
-      // reset to some default or clear KPIs
-      setAvgDcr(0.07);
-      setSitePoorChnlQlty(345);
-      setAvgSINR5G(16.78);
-      setAvgSINR4G(6.75);
+    try {
+      if (view === "MARKET" && context.marketId) {
+        await handleMarketSelect(context.marketId);
+      } else if (view === "ZIP" && context.zipIds?.length > 0) {
+        await handleZipSelect(context.zipIds[0]);
+      } else if (view === "NATIONAL") {
+        // reset to some default or clear KPIs
+        setAvgDcr(0.07);
+        setSitePoorChnlQlty(345);
+        setAvgSINR5G(16.78);
+        setAvgSINR4G(6.75);
+      }
+    } catch (error) {
+      console.error("Error in handleViewChange:", error);
     }
-  } catch (error) {
-    console.error("Error in handleViewChange:", error);
-  }
-};
+  };
 
   return (
     <DashboardWrapper>
@@ -150,33 +155,58 @@ const Dashboard = () => {
               On Air Sites
             </h1>
 
-            <ChartSection></ChartSection>
+            <ChartSection>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  color: "#e20074",
+                }}
+              >
+                {market}
+              </div>
+              <div style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  color: "#000000",
+              }}>Market
+              </div>
+            </ChartSection>
             <Border />
             <ProgressBarContainer></ProgressBarContainer>
             <Border />
-            <InfoWrapper>
-              <InformationContainer>
-                <InformationContent>
-                  <Information>{sitePoorChnlQlty.toFixed(2)}</Information>
-                  <Text>Sites with Poor Channel Quality</Text>
-                </InformationContent>
-                <InformationContent>
-                  <Information>{avgDcr.toFixed(2)}%</Information>
-                  <Text>Average DCR</Text>
-                </InformationContent>
-              </InformationContainer>
+            {isData === "success" ? (
+              <InfoWrapper>
+                <InformationContainer>
+                  <InformationContent>
+                    <Information>{sitePoorChnlQlty.toFixed(2)}</Information>
+                    <Text>Sites with Poor Channel Quality</Text>
+                  </InformationContent>
+                  <InformationContent>
+                    <Information>{avgDcr.toFixed(2)}%</Information>
+                    <Text>Average DCR</Text>
+                  </InformationContent>
+                </InformationContainer>
 
-              <InformationContainer>
-                <InformationContent>
-                  <Information>{avgSINR5G.toFixed(2)}</Information>
-                  <Text>AVG SINR for Uplink PUSCH 5G</Text>
-                </InformationContent>
-                <InformationContent>
-                  <Information>{avgSINR4G.toFixed(2)}</Information>
-                  <Text>AVG SINR for Uplink PUSCH 4G</Text>
-                </InformationContent>
-              </InformationContainer>
-            </InfoWrapper>
+                <InformationContainer>
+                  <InformationContent>
+                    <Information>{avgSINR5G.toFixed(2)}</Information>
+                    <Text>AVG SINR for Uplink PUSCH 5G</Text>
+                  </InformationContent>
+                  <InformationContent>
+                    <Information>{avgSINR4G.toFixed(2)}</Information>
+                    <Text>AVG SINR for Uplink PUSCH 4G</Text>
+                  </InformationContent>
+                </InformationContainer>
+              </InfoWrapper>
+            ) : (
+              <p style={{
+                  fontSize: "20px",
+                  fontWeight: "400",
+                  color: "#e20074",
+                  textAlign:"center",
+                }}>No Data Available</p>
+            )}
           </MiddleRight>
         </MiddleSection>
       </MainSection>
