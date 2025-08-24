@@ -1,17 +1,31 @@
 import React from "react";
 
-const MapHeader = ({ viewInfo }) => {
+const MapHeader = ({ viewInfo, onHeaderHover }) => {
   const { title, subtitle, description } = viewInfo;
+
+  const handleHeaderMouseEnter = () => {
+    if (onHeaderHover) {
+      onHeaderHover(true);
+    }
+  };
+
+  const handleHeaderMouseLeave = () => {
+    if (onHeaderHover) {
+      onHeaderHover(false);
+    }
+  };
 
   return (
     <div
+      onMouseEnter={handleHeaderMouseEnter}
+      onMouseLeave={handleHeaderMouseLeave}
       style={{
         position: "absolute",
-        top: "80px",
-        left: "20px",
+        top: "72px",
+        left: "10px",
         backgroundColor: "rgba(255, 255, 255, 0.95)",
         padding: "16px 20px",
-        borderRadius: "8px",
+        borderRadius: "14px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
         zIndex: 1000,
         minWidth: "200px",

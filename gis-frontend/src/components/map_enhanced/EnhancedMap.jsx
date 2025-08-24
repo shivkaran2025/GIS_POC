@@ -20,15 +20,15 @@ const MAP_STYLE = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json
 
 const INITIAL_VIEW = {
   longitude: -98,
-  latitude: 39,
-  zoom: 3.8,
+  latitude: 41,
+  zoom: 3.5,
 };
 
 const ZOOM_LEVELS = {
   NATIONAL: { min: 0, max: 5 },
-  MARKET: { min: 5, max: 8 },
-  ZIP: { min: 8, max: 11 },
-  SITE: { min: 11, max: 22 }
+  MARKET: { min: 5, max: 7 },
+  ZIP: { min: 8, max: 9.5 },
+  SITE: { min: 9.5, max: 22 }
 };
 
 const EnhancedMap = () => {
@@ -47,6 +47,10 @@ const EnhancedMap = () => {
     x: 0,
     y: 0,
   });
+  const [isManualTransition, setIsManualTransition] = useState(false);
+  const [isControlHovered, setIsControlHovered] = useState(false);
+  const [isHeaderHovered, setIsHeaderHovered] = useState(false);
+  console.log("currentView", currentView);
 
   const mapRef = useRef(null);
   const hoveredFeatureIdRef = useRef(null);
@@ -91,68 +95,6 @@ const EnhancedMap = () => {
     return { centerLat, centerLng, radius, bounds };
   }, []);
 
-  // Handle market click to zoom into market
-  const handleMarketClick = useCallback((evt) => {
-    if (!evt.features || evt.features.length === 0) return;
-
-    const feature = evt.features[0];
-    if (!feature || feature.layer.id !== "market-fill") return;
-
-    const map = mapRef.current?.getMap();
-    if (!map) return;
-
-    const marketName = feature.properties.Market;
-    setCurrentMarket(marketName);
-
-    const [minLng, minLat, maxLng, maxLat] = bbox(feature);
-    map.fitBounds(
-      [
-        [minLng, minLat],
-        [maxLng, maxLat],
-      ],
-      { padding: 50, duration: 1000 }
-    );
-
-    map.once("moveend", () => {
-      if (map.getZoom() < ZOOM_LEVELS.MARKET.min) {
-        map.zoomTo(ZOOM_LEVELS.MARKET.min, { duration: 800 });
-      }
-    });
-
-    setCurrentView("MARKET");
-  }, []);
-
-  // Handle ZIP code click to zoom into ZIP area
-  const handleZipClick = useCallback((evt) => {
-    if (!evt.features || evt.features.length === 0) return;
-
-    const feature = evt.features[0];
-    if (!feature || feature.layer.id !== "zip-fill") return;
-
-    const map = mapRef.current?.getMap();
-    if (!map) return;
-
-    const zipCode = feature.properties.zip_code;
-    setCurrentZipCodes([zipCode]);
-
-    const [minLng, minLat, maxLng, maxLat] = bbox(feature);
-    map.fitBounds(
-      [
-        [minLng, minLat],
-        [maxLng, maxLat],
-      ],
-      { padding: 50, duration: 1000 }
-    );
-
-    map.once("moveend", () => {
-      if (map.getZoom() < ZOOM_LEVELS.SITE.min) {
-        map.zoomTo(ZOOM_LEVELS.SITE.min, { duration: 800 });
-      }
-    });
-
-    setCurrentView("SITE");
-  }, []);
-
   // Load ZIP codes for current market area
   const loadZipCodes = useCallback(async (bounds) => {
     const { north, south, east, west } = bounds;
@@ -178,6 +120,81 @@ const EnhancedMap = () => {
     }
   }, []);
 
+  // Handle market click to zoom into market
+  const handleMarketClick = useCallback((evt) => {
+    if (!evt.features || evt.features.length === 0) return;
+
+    const feature = evt.features[0];
+    console.log("handleMarketClick", feature, evt);
+    if (!feature || feature.layer.id !== "market-fill") return;
+
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    const marketName = feature.properties.Market;
+    
+    // If we're already in MARKET view and clicking on the same market, zoom to ZIP level
+    if (currentView === "MARKET" && currentMarket === marketName) {
+      // Set manual transition flag to prevent handleMove from overriding
+      setIsManualTransition(true);
+      
+      // Zoom to ZIP code level for this market
+      const [minLng, minLat, maxLng, maxLat] = bbox(feature);
+      map.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: 20, duration: 1000 }
+      );
+
+      map.once("moveend", async () => {
+        // Zoom to ZIP level
+        const targetZoom = Math.max(ZOOM_LEVELS.ZIP.min, map.getZoom());
+        map.zoomTo(targetZoom, { duration: 800 });
+        
+        // Load ZIP codes for the current area after zoom
+        const bounds = map.getBounds();
+        await loadZipCodes({
+          north: bounds.getNorth(),
+          south: bounds.getSouth(),
+          east: bounds.getEast(),
+          west: bounds.getWest(),
+        });
+        
+        // Clear manual transition flag after transition is complete
+        setTimeout(() => setIsManualTransition(false), 500);
+      });
+
+      setCurrentView("ZIP");
+      return;
+    }
+
+    // If we're in NATIONAL view, zoom to market level
+    setIsManualTransition(true);
+    setCurrentMarket(marketName);
+
+    const [minLng, minLat, maxLng, maxLat] = bbox(feature);
+    map.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      { padding: 20, duration: 1000 }
+    );
+
+    map.once("moveend", () => {
+      // Ensure we're at market zoom level
+      const targetZoom = Math.max(ZOOM_LEVELS.MARKET.min, map.getZoom());
+      map.zoomTo(targetZoom, { duration: 800 });
+      
+      // Clear manual transition flag after transition is complete
+      setTimeout(() => setIsManualTransition(false), 500);
+    });
+
+    setCurrentView("MARKET");
+  }, [currentView, currentMarket, loadZipCodes]);
+
   // Load sites for current area
   const loadSites = useCallback(async (centerLat, centerLng, radius) => {
     const cacheKey = makeSiteCacheKey(centerLat, centerLng, radius);
@@ -202,94 +219,111 @@ const EnhancedMap = () => {
     }
   }, []);
 
-  // Handle map movement and zoom changes
-  const handleMove = useCallback(async (evt) => {
-    const zoom = evt.viewState.zoom;
+  // Handle ZIP code click to zoom into ZIP area
+  const handleZipClick = useCallback((evt) => {
+    if (!evt.features || evt.features.length === 0) return;
+
+    const feature = evt.features[0];
+    if (!feature || feature.layer.id !== "zip-fill") return;
+
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+
+    const zipCode = feature.properties.zip_code;
+    
+    // Set manual transition flag to prevent handleMove from overriding
+    setIsManualTransition(true);
+    setCurrentZipCodes([zipCode]);
+
+    const [minLng, minLat, maxLng, maxLat] = bbox(feature);
+    map.fitBounds(
+      [
+        [minLng, minLat],
+        [maxLng, maxLat],
+      ],
+      { padding: 50, duration: 1000 }
+    );
+
+    map.once("moveend", async () => {
+      // Ensure we're at site zoom level - zoom to a level clearly within SITE range
+      const targetZoom = Math.max(ZOOM_LEVELS.SITE.min + 0.5, map.getZoom());
+      map.zoomTo(targetZoom, { duration: 800 });
+      
+      // Load sites for the current area after zoom
+      const { centerLat, centerLng, radius } = getBoundsData(map);
+      await loadSites(centerLat, centerLng, radius);
+      
+      // Clear manual transition flag after transition is complete
+      setTimeout(() => setIsManualTransition(false), 500);
+    });
+
+    setCurrentView("SITE");
+  }, [getBoundsData, loadSites]);
+
+  // Unified handler for map movement and data loading
+  const handleMapChange = useCallback(async (evt) => {
+    // Skip if we're in the middle of a manual transition
+    if (isManualTransition) {
+      return;
+    }
+
+    const zoom = evt.viewState?.zoom || evt.target.getZoom();
     const map = evt.target;
+    console.log("handleMapChange", zoom, currentView, evt.type);
 
     try {
+      // Determine target view based on zoom level
+      let targetView = currentView;
       if (zoom < ZOOM_LEVELS.NATIONAL.max) {
-        if (currentView !== "NATIONAL") {
+        targetView = "NATIONAL";
+      } else if (zoom >= ZOOM_LEVELS.MARKET.min && zoom <= ZOOM_LEVELS.MARKET.max) {
+        targetView = "MARKET";
+      } else if (zoom >= ZOOM_LEVELS.ZIP.min && zoom <= ZOOM_LEVELS.ZIP.max) {
+        targetView = "ZIP";
+      } else if (zoom >= ZOOM_LEVELS.SITE.min) {
+        targetView = "SITE";
+      }
+
+      // Handle view transitions
+      if (targetView !== currentView) {
+        console.log(`View transition: ${currentView} → ${targetView}`);
+        
+        if (targetView === "NATIONAL") {
           setCurrentView("NATIONAL");
           setCurrentMarket(null);
           setCurrentZipCodes([]);
           setZipData(null);
           setSiteData(null);
-        }
-      } else if (zoom >= ZOOM_LEVELS.MARKET.min && zoom <= ZOOM_LEVELS.MARKET.max) {
-        if (currentView !== "MARKET") {
+        } else if (targetView === "MARKET") {
           setCurrentView("MARKET");
           setCurrentZipCodes([]);
           setSiteData(null);
-          
-          // Load ZIP codes for current market area
-          const bounds = map.getBounds();
-          await loadZipCodes({
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
-          });
-        }
-      } else if (zoom >= ZOOM_LEVELS.ZIP.min && zoom <= ZOOM_LEVELS.ZIP.max) {
-        if (currentView !== "ZIP") {
+        } else if (targetView === "ZIP") {
           setCurrentView("ZIP");
           setSiteData(null);
-          
-          // Load ZIP codes for current area
-          const bounds = map.getBounds();
-          await loadZipCodes({
-            north: bounds.getNorth(),
-            south: bounds.getSouth(),
-            east: bounds.getEast(),
-            west: bounds.getWest(),
-          });
-        }
-      } else if (zoom >= ZOOM_LEVELS.SITE.min) {
-        if (currentView !== "SITE") {
+        } else if (targetView === "SITE") {
           setCurrentView("SITE");
-          
-          // Load sites for current area
-          const { centerLat, centerLng, radius } = getBoundsData(map);
-          await loadSites(centerLat, centerLng, radius);
         }
       }
-    } catch (error) {
-      console.error("Error in handleMove:", error);
-      setLoading(false);
-    }
-  }, [currentView, loadZipCodes, loadSites, getBoundsData]);
 
-  // Handle map drag to reload data for new area
-  const handleMapDrag = useCallback(async (evt) => {
-    const map = evt.target;
-    const zoom = map.getZoom();
-
-    try {
-      if (zoom >= ZOOM_LEVELS.MARKET.min && zoom <= ZOOM_LEVELS.MARKET.max) {
-        const bounds = map.getBounds();
+      // Load data for current view (whether view changed or just area changed)
+      const bounds = map.getBounds();
+      if (targetView === "MARKET" || targetView === "ZIP") {
         await loadZipCodes({
           north: bounds.getNorth(),
           south: bounds.getSouth(),
           east: bounds.getEast(),
           west: bounds.getWest(),
         });
-      } else if (zoom >= ZOOM_LEVELS.ZIP.min && zoom <= ZOOM_LEVELS.ZIP.max) {
-        const bounds = map.getBounds();
-        await loadZipCodes({
-          north: bounds.getNorth(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          west: bounds.getWest(),
-        });
-      } else if (zoom >= ZOOM_LEVELS.SITE.min) {
+      } else if (targetView === "SITE") {
         const { centerLat, centerLng, radius } = getBoundsData(map);
         await loadSites(centerLat, centerLng, radius);
       }
     } catch (error) {
-      console.error("Error in handleMapDrag:", error);
+      console.error("Error in handleMapChange:", error);
+      setLoading(false);
     }
-  }, [loadZipCodes, loadSites, getBoundsData]);
+  }, [currentView, loadZipCodes, loadSites, getBoundsData, isManualTransition]);
 
   // Handle mouse interactions for tooltips
   const handleMouseMove = useCallback((evt) => {
@@ -385,6 +419,31 @@ const EnhancedMap = () => {
     }
   };
 
+  // Reset view to national level
+  const handleResetView = useCallback(() => {
+    setCurrentView("NATIONAL");
+    setCurrentMarket(null);
+    setCurrentZipCodes([]);
+    setZipData(null);
+    setSiteData(null);
+  }, []);
+
+  // Handle control hover to hide tooltip
+  const handleControlHover = useCallback((isHovered) => {
+    setIsControlHovered(isHovered);
+    if (isHovered) {
+      setTooltip((prev) => ({ ...prev, visible: false }));
+    }
+  }, []);
+
+  // Handle header hover to hide tooltip
+  const handleHeaderHover = useCallback((isHovered) => {
+    setIsHeaderHovered(isHovered);
+    if (isHovered) {
+      setTooltip((prev) => ({ ...prev, visible: false }));
+    }
+  }, []);
+
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
       <MapGL
@@ -392,19 +451,19 @@ const EnhancedMap = () => {
         initialViewState={INITIAL_VIEW}
         style={{ width: "100%", height: "100%" }}
         mapStyle={MAP_STYLE}
-        onMoveEnd={handleMove}
-        onDragEnd={handleMapDrag}
+        onMoveEnd={handleMapChange}
+        onDragEnd={handleMapChange}
         interactiveLayerIds={["market-fill", "zip-fill"]}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        onClick={currentView === "NATIONAL" ? handleMarketClick : 
-                currentView === "MARKET" || currentView === "ZIP" ? handleZipClick : undefined}
+        onClick={currentView === "NATIONAL" || currentView === "MARKET" ? handleMarketClick : 
+                currentView === "ZIP" ? handleZipClick : undefined}
       >
-        {/* Market Layer - Always visible for national view */}
-        {currentView === "NATIONAL" && <MarketLayer marketData={marketData} />}
+        {/* Market Layer - Visible for national and market views */}
+        {(currentView === "NATIONAL" || currentView === "MARKET") && <MarketLayer marketData={marketData} />}
         
         {/* ZIP Code Layer - Visible for market and zip views */}
-        {(currentView === "MARKET" || currentView === "ZIP") && (
+        {(currentView === "ZIP") && (
           <ZipCodeLayer zipData={zipData} />
         )}
         
@@ -413,14 +472,14 @@ const EnhancedMap = () => {
       </MapGL>
 
       {/* Map Header */}
-      <MapHeader viewInfo={getViewInfo()} />
+      <MapHeader viewInfo={getViewInfo()} onHeaderHover={handleHeaderHover} />
 
       {/* Map Controls */}
-      <MapControls />
+      <MapControls mapRef={mapRef} onResetView={handleResetView} onControlHover={handleControlHover} />
 
       {/* Tooltip */}
       <MapTooltip
-        visible={tooltip.visible}
+        visible={tooltip.visible && !isControlHovered && !isHeaderHovered}
         content={tooltip.content}
         x={tooltip.x}
         y={tooltip.y}

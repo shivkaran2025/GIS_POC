@@ -1,14 +1,26 @@
 import React from "react";
 
-const MapControls = () => {
+const INITIAL_VIEW = {
+  longitude: -98,
+  latitude: 41,
+  zoom: 3.5,
+};
+
+const MapControls = ({ mapRef, onResetView, onControlHover }) => {
   const handleZoomIn = () => {
-    // This would be handled by the parent map component
-    // For now, we'll just log the action
-    console.log("Zoom in clicked");
+    const map = mapRef?.current?.getMap();
+    if (map) {
+      const currentZoom = map.getZoom();
+      map.zoomTo(currentZoom + 1, { duration: 300 });
+    }
   };
 
   const handleZoomOut = () => {
-    console.log("Zoom out clicked");
+    const map = mapRef?.current?.getMap();
+    if (map) {
+      const currentZoom = map.getZoom();
+      map.zoomTo(currentZoom - 1, { duration: 300 });
+    }
   };
 
   const handleCompass = () => {
@@ -16,7 +28,31 @@ const MapControls = () => {
   };
 
   const handleGlobe = () => {
-    console.log("Globe clicked");
+    const map = mapRef?.current?.getMap();
+    if (map) {
+      map.flyTo({
+        center: [INITIAL_VIEW.longitude, INITIAL_VIEW.latitude],
+        zoom: INITIAL_VIEW.zoom,
+        duration: 1000
+      });
+      
+      // Call the parent's reset view function if provided
+      if (onResetView) {
+        onResetView();
+      }
+    }
+  };
+
+  const handleControlMouseEnter = () => {
+    if (onControlHover) {
+      onControlHover(true);
+    }
+  };
+
+  const handleControlMouseLeave = () => {
+    if (onControlHover) {
+      onControlHover(false);
+    }
   };
 
   return (
@@ -25,7 +61,7 @@ const MapControls = () => {
       <div
         style={{
           position: "absolute",
-          bottom: "20px",
+          bottom: "80px",
           right: "20px",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderRadius: "8px",
@@ -35,8 +71,10 @@ const MapControls = () => {
         }}
       >
         {/* Compass */}
-        <button
+        {/* <button
           onClick={handleCompass}
+          onMouseEnter={handleControlMouseEnter}
+          onMouseLeave={handleControlMouseLeave}
           style={{
             width: "40px",
             height: "40px",
@@ -57,11 +95,13 @@ const MapControls = () => {
               fill="#333"
             />
           </svg>
-        </button>
+        </button> */}
         
         {/* Zoom In */}
         <button
           onClick={handleZoomIn}
+          onMouseEnter={handleControlMouseEnter}
+          onMouseLeave={handleControlMouseLeave}
           style={{
             width: "40px",
             height: "40px",
@@ -86,6 +126,8 @@ const MapControls = () => {
         {/* Zoom Out */}
         <button
           onClick={handleZoomOut}
+          onMouseEnter={handleControlMouseEnter}
+          onMouseLeave={handleControlMouseLeave}
           style={{
             width: "40px",
             height: "40px",
@@ -111,9 +153,11 @@ const MapControls = () => {
       {/* Globe Control - Top Right */}
       <button
         onClick={handleGlobe}
+        onMouseEnter={handleControlMouseEnter}
+        onMouseLeave={handleControlMouseLeave}
         style={{
           position: "absolute",
-          top: "20px",
+          top: "80px",
           right: "20px",
           width: "40px",
           height: "40px",
