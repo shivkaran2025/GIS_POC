@@ -1,26 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useMemo, useCallback } from "react";
 import { Source, Layer } from "react-map-gl/maplibre";
 
 const NeighborhoodLayer = ({ data }) => {
-  useEffect(() => {
-    console.log("NeighborhoodLayer received data:", data);
-    if (data) {
-      console.log("Data type:", data.type);
-      console.log("Features count:", data.features?.length || 0);
-      if (data.features && data.features.length > 0) {
-        console.log("First feature:", data.features[0]);
-      }
-    }
+  // Data validation को memoize करें
+  const isValidData = useMemo(() => {
+    return data && (
+      data.type === "FeatureCollection" ||
+      Array.isArray(data.features) ||
+      data.feature ||
+      Array.isArray(data)
+    );
   }, [data]);
 
-  if (!data) {
-    console.log("No data provided to NeighborhoodLayer");
-    return null;
-  }
+  // GeoJSON processing को memoize करें
+  const geojsonData = useMemo(() => {
+    if (!isValidData) return null;
 
-  // Improved data normalization
-  const geojsonData = (() => {
     try {
+      console.log("Processing GeoJSON data...");
+
       if (data.type === "FeatureCollection") {
         return data;
       }
@@ -34,7 +32,7 @@ const NeighborhoodLayer = ({ data }) => {
         features = data;
       }
 
-      const normalized = {
+      return {
         type: "FeatureCollection",
         features: features.filter(
           (feature) =>
@@ -45,46 +43,68 @@ const NeighborhoodLayer = ({ data }) => {
               feature.geometry.type === "MultiPolygon")
         ),
       };
-
-      console.log("Normalized GeoJSON:", normalized);
-      console.log("Valid features:", normalized.features.length);
-
-      return normalized;
     } catch (error) {
       console.error("Error normalizing GeoJSON data:", error);
       return { type: "FeatureCollection", features: [] };
     }
-  })();
+  }, [data, isValidData]);
 
-  if (!geojsonData.features || geojsonData.features.length === 0) {
+  // Feature count को memoize करें
+  const featureCount = useMemo(() => {
+    return geojsonData?.features?.length || 0;
+  }, [geojsonData]);
+
+  // Source properties को memoize करें
+  const sourceProps = useMemo(() => ({
+    id: "neighborhood",
+    type: "geojson",
+    data: geojsonData,
+    // Performance optimizations
+    maxzoom: 12,
+    buffer: 0,
+    tolerance: 0.375
+  }), [geojsonData]);
+
+  // Layer styles को static memoize करें
+  const layerStyles = useMemo(() => ({
+    fillLayer: {
+      id: "neighborhood-fill",
+      type: "fill",
+      source: "neighborhood",
+      paint: {
+        "fill-color": "#0080ff",
+        "fill-opacity": 0.4,
+      },
+      minzoom: 5, // Don't render at low zoom
+    },
+    lineLayer: {
+      id: "neighborhood-line",
+      type: "line",
+      source: "neighborhood",
+      paint: {
+        "line-color": "#004080",
+        "line-width": 2,
+      },
+      minzoom: 5,
+    }
+  }), []);
+
+  // Early returns
+  if (!isValidData) {
+    return null;
+  }
+
+  if (featureCount === 0) {
     console.warn("No valid polygon features found in neighborhood data");
     return null;
   }
 
-  const fillLayer = {
-    id: "neighborhood-fill",
-    type: "fill",
-    source: "neighborhood",
-    paint: {
-      "fill-color": "#0080ff",
-      "fill-opacity": 0.4,
-    },
-  };
-
-  const lineLayer = {
-    id: "neighborhood-line",
-    type: "line",
-    source: "neighborhood",
-    paint: {
-      "line-color": "#004080",
-      "line-width": 2,
-    },
-  };
+  console.log(`Rendering ${featureCount} polygon features`);
 
   return (
-    <Source id="neighborhood" type="geojson" data={geojsonData}>
-      <Layer {...fillLayer} />
-      <Layer {...lineLayer} />
+    <Source {...sourceProps}>
+      <Layer {...layerStyles.fillLayer} />
+      <Layer {...layerStyles.lineLayer} />
     </Source>
   );
 };

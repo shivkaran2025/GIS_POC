@@ -392,43 +392,33 @@ const Map = () => {
   }, []);
 
   // Load initial neighborhood data (fallback)
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getCdcNeighborhoods();
-        console.log(
-          "Initial neighborhood data loaded:",
-          data?.features?.length
-        );
-        // Don't set it immediately, let the bounds-based loading handle it
-      } catch (err) {
-        console.error("Error fetching CDC Neighborhoods:", err);
-      }
-    })();
-  }, []);
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const data = await getCdcNeighborhoods();
+  //       // Don't set it immediately, let the bounds-based loading handle it
+  //     } catch (err) {
+  //       console.error("Error fetching CDC Neighborhoods:", err);
+  //     }
+  //   })();
+  // }, []);
 
   // NEW: Optimized neighborhood loading with caching
   const loadNeighborhoodsByBounds = useCallback(async (boundsData) => {
     const { north, south, east, west } = boundsData;
     const cacheKey = makeNeighborhoodCacheKey(north, south, east, west);
 
-    console.log("Checking neighborhood cache for:", cacheKey);
-
     // Check cache first
     if (neighborhoodCacheRef.current[cacheKey]) {
-      console.log("Using cached neighborhood data");
       setNeighborhoodata(neighborhoodCacheRef.current[cacheKey]);
       return;
     }
-
-    console.log("Loading new neighborhood data for bounds:", boundsData);
     setLoading(true);
 
     try {
       const data = await getCdcNeighborhoodsByBounds(boundsData);
 
       if (data && data.features) {
-        console.log(`Loaded ${data.features.length} neighborhoods`);
         setNeighborhoodata(data);
         // Cache the result
         neighborhoodCacheRef.current[cacheKey] = data;
@@ -532,7 +522,6 @@ const Map = () => {
         } else if (zoom >= 5 && zoom <= 9) {
           if (currentView !== "neighborhood") {
             setCurrentView("neighborhood");
-            console.log("Switching to neighborhood view");
 
             // Get current map bounds for viewport-based loading
             const map = mapRef.current?.getMap();

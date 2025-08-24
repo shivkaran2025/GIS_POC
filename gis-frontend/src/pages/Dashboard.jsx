@@ -22,13 +22,82 @@ import Bell from "../assets/Bell.svg";
 import Collapse from "../assets/collapse.svg";
 import { viewSizeCalculator } from "../utils/viewSizeCalculator";
 import { EnhancedMap } from "../components/map_enhanced";
+import {
+  getMarketKpiByMarketId,
+  getZipKpiByZipId,
+  getHexKpiByHexId,
+  getNeighborhoodKpiByNeighborhoodId,
+  getSiteKpiBySiteId,
+} from "../services/kpiApiService";
 
 const Dashboard = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [avgDcr, setAvgDcr] = useState(0.07);
+  const [sitePoorChnlQlty, setSitePoorChnlQlty] = useState(345);
+  const [avgSINR5G, setAvgSINR5G] = useState(16.78);
+  const [avgSINR4G, setAvgSINR4G] = useState(6.75);
+
+  const handleMarketSelect = async (marketId) => {
+    try {
+      const response = await getMarketKpiByMarketId(marketId);
+      console.log("Market KPI:", response);
+      // 🔥 here you can also update state if you want to display the KPIs
+      if (response?.data?.length > 0) {
+        const first = response.data[0];
+
+        // 🔥 set states using API values
+        setAvgDcr(first.ret_volte_drop_rate_4g); // DCR
+        setSitePoorChnlQlty(first.qual_avg_cqi_4g); // Poor Channel Quality
+        setAvgSINR5G(first.qual_ue_avg_sinr_pusch_5g); // SINR 5G
+        setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g); // SINR 4G
+      }
+    } catch (error) {
+      console.error("Error fetching KPI:", error);
+    }
+  };
+
+  const handleZipSelect = async (zipId) => {
+    try {
+      const response = await getNeighborhoodKpiByNeighborhoodId(zipId);
+      console.log("Zip KPI:", response);
+
+      if (response?.data?.length > 0) {
+        const first = response.data[0];
+
+        setAvgDcr(first.ret_volte_drop_rate_4g);
+        setSitePoorChnlQlty(first.qual_avg_cqi_4g);
+        setAvgSINR5G(first.qual_ue_avg_sinr_pusch_5g);
+        setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g);
+      }
+    } catch (error) {
+      console.error("Error fetching ZIP KPI:", error);
+    }
+  };
 
   const handleCollapseClick = () => {
     setIsExpanded(!isExpanded);
   };
+
+  const handleViewChange = async (view, context) => {
+  console.log("Map View Changed:", view, context);
+
+  try {
+    if (view === "MARKET" && context.marketId) {
+      await handleMarketSelect(context.marketId);
+    } else if (view === "ZIP" && context.zipIds?.length > 0) {
+      await handleZipSelect(context.zipIds[0]);
+    } else if (view === "NATIONAL") {
+      // reset to some default or clear KPIs
+      setAvgDcr(0.07);
+      setSitePoorChnlQlty(345);
+      setAvgSINR5G(16.78);
+      setAvgSINR4G(6.75);
+    }
+  } catch (error) {
+    console.error("Error in handleViewChange:", error);
+  }
+};
+
   return (
     <DashboardWrapper>
       <MainSection>
@@ -63,7 +132,11 @@ const Dashboard = () => {
           </MiddleLeft>
 
           <MiddleCenter>
-            <EnhancedMap />
+            <EnhancedMap
+              onMarketSelect={handleMarketSelect}
+              onZipSelect={handleZipSelect}
+              onViewChange={handleViewChange}
+            />
           </MiddleCenter>
 
           <MiddleRight>
@@ -84,22 +157,22 @@ const Dashboard = () => {
             <InfoWrapper>
               <InformationContainer>
                 <InformationContent>
-                  <Information>345</Information>
+                  <Information>{sitePoorChnlQlty.toFixed(2)}</Information>
                   <Text>Sites with Poor Channel Quality</Text>
                 </InformationContent>
                 <InformationContent>
-                  <Information>0.07 %</Information>
+                  <Information>{avgDcr.toFixed(2)}%</Information>
                   <Text>Average DCR</Text>
                 </InformationContent>
               </InformationContainer>
 
               <InformationContainer>
                 <InformationContent>
-                  <Information>16.78</Information>
+                  <Information>{avgSINR5G.toFixed(2)}</Information>
                   <Text>AVG SINR for Uplink PUSCH 5G</Text>
                 </InformationContent>
                 <InformationContent>
-                  <Information>6.75</Information>
+                  <Information>{avgSINR4G.toFixed(2)}</Information>
                   <Text>AVG SINR for Uplink PUSCH 4G</Text>
                 </InformationContent>
               </InformationContainer>

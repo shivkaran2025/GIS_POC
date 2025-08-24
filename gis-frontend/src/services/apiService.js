@@ -147,7 +147,6 @@ export const search = async (query, dataset = "all", signal) => {
 // ZIP Codes API (NEW)
 export const getZipCodes = async (signal) => {
   try {
-    console.log("Fetching all ZIP codes");
     const response = await fetch(`${API_BASE_URL}/api/zip-codes`, { signal });
     if (!response.ok) throw new Error("Failed to fetch ZIP codes");
     return await response.json();
@@ -161,11 +160,10 @@ export const getZipCodes = async (signal) => {
 export const getZipCodesByBounds = async (bounds, signal) => {
   try {
     const { north, south, east, west } = bounds;
-    const response = await fetch(`#`, { signal });
-    // const response = await fetch(
-    //   `${API_BASE_URL}/api/zip-codes/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
-    //   { signal }
-    // );
+    const response = await fetch(
+      `${API_BASE_URL}/api/zip-codes/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
+      { signal }
+    );
     if (!response.ok) throw new Error("Failed to fetch ZIP codes by bounds");
     return await response.json();
   } catch (error) {

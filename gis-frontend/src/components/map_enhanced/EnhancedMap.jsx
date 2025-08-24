@@ -31,12 +31,13 @@ const ZOOM_LEVELS = {
   SITE: { min: 9.5, max: 22 }
 };
 
-const EnhancedMap = () => {
+const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
   const [currentView, setCurrentView] = useState("NATIONAL");
   const [currentMarket, setCurrentMarket] = useState(null);
   const [currentZipCodes, setCurrentZipCodes] = useState([]);
   
   const [marketData, setMarketData] = useState(null);
+  console.log("mraket data",marketData);
   const [zipData, setZipData] = useState(null);
   const [siteData, setSiteData] = useState(null);
   
@@ -132,6 +133,12 @@ const EnhancedMap = () => {
     if (!map) return;
 
     const marketName = feature.properties.Market;
+
+    // 🔥 Send marketId to parent
+    if (onMarketSelect) {
+      onMarketSelect(marketName);
+    }
+
     
     // If we're already in MARKET view and clicking on the same market, zoom to ZIP level
     if (currentView === "MARKET" && currentMarket === marketName) {
@@ -230,6 +237,13 @@ const EnhancedMap = () => {
     if (!map) return;
 
     const zipCode = feature.properties.zip_code;
+
+    const ZipID = feature.properties.ID
+    console.log("zipcode", ZipID);
+
+    if (onZipSelect) {
+      onZipSelect(ZipID);
+    }
     
     // Set manual transition flag to prevent handleMove from overriding
     setIsManualTransition(true);
@@ -287,7 +301,11 @@ const EnhancedMap = () => {
       // Handle view transitions
       if (targetView !== currentView) {
         console.log(`View transition: ${currentView} → ${targetView}`);
-        
+         setCurrentView(targetView);
+
+        if (onViewChange) {
+          onViewChange(targetView, { marketId: currentMarket, zipIds: currentZipCodes });
+        }
         if (targetView === "NATIONAL") {
           setCurrentView("NATIONAL");
           setCurrentMarket(null);
