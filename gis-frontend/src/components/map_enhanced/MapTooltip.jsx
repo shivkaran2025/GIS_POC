@@ -62,7 +62,28 @@ const MapTooltip = ({ visible, content, x, y }) => {
           </div>
         </div>
       );
-    }
+         } else if (content.layer?.id?.includes("boundary")) {
+       // Boundary tooltip
+       const boundaryType = content.layer.id.includes("market") ? "Market" : 
+                           content.layer.id.includes("zip") ? "ZIP Code" : 
+                           content.layer.id.includes("neighborhood") ? "Neighborhood" : "Area";
+       
+       const boundaryColor = content.layer.id.includes("market") ? "#e20074" : 
+                            content.layer.id.includes("zip") ? "#28a745" : 
+                            content.layer.id.includes("neighborhood") ? "#fd7e14" : "#e20074";
+       
+       return (
+         <div>
+           <div style={{ fontWeight: "bold", fontSize: "14px", marginBottom: "4px", color: boundaryColor }}>
+             Selected {boundaryType} Boundary
+           </div>
+           <div style={{ fontSize: "12px", color: "#666" }}>
+             <div>This dashed line shows the boundary of the selected {boundaryType.toLowerCase()}</div>
+             <div>Data outside this boundary belongs to other areas</div>
+           </div>
+         </div>
+       );
+     }
     
     return (
       <div style={{ fontSize: "12px" }}>

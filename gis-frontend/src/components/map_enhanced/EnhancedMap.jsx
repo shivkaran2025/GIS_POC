@@ -14,6 +14,8 @@ import MarketLayer from "./MarketLayer";
 import ZipLayer from "./ZipLayer";
 import NeighborhoodLayer from "./NeighborhoodLayer";
 import SiteLayer from "./SiteLayer";
+import SelectedBoundaryLayer from "./SelectedBoundaryLayer";
+import BoundaryLegend from "./BoundaryLegend";
 import MapTooltip from "./MapTooltip";
 import MapHeader from "./MapHeader";
 import MapControls from "./MapControls";
@@ -43,6 +45,11 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
   const [zipData, setZipData] = useState(null);
   const [neighborhoodData, setNeighborhoodData] = useState(null);
   const [siteData, setSiteData] = useState(null);
+  
+  // Add state for selected entity boundaries
+  const [selectedMarketBoundary, setSelectedMarketBoundary] = useState(null);
+  const [selectedZipBoundary, setSelectedZipBoundary] = useState(null);
+  const [selectedNeighborhoodBoundary, setSelectedNeighborhoodBoundary] = useState(null);
   
   const [loading, setLoading] = useState(false);
   const [tooltip, setTooltip] = useState({
@@ -171,6 +178,11 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
       onMarketSelect(marketName);
     }
 
+    // Store the selected market boundary for display
+    setSelectedMarketBoundary(feature);
+    setSelectedZipBoundary(null);
+    setSelectedNeighborhoodBoundary(null);
+
     
     // If we're already in MARKET view and clicking on the same market, zoom to ZIP level
     if (currentView === "MARKET" && currentMarket === marketName) {
@@ -190,7 +202,7 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
       map.once("moveend", async () => {
         // Zoom to neighborhood level
         const targetZoom = Math.max(ZOOM_LEVELS.ZIP.min, map.getZoom());
-        map.zoomTo(targetZoom, { duration: 800 });
+        map.zoomTo("6.5", { duration: 800 });
         
         // Load neighborhoods for the current area after zoom
         const bounds = map.getBounds();
@@ -225,7 +237,7 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
     map.once("moveend", () => {
       // Ensure we're at market zoom level
       const targetZoom = Math.max(ZOOM_LEVELS.MARKET.min, map.getZoom());
-      map.zoomTo(targetZoom, { duration: 800 });
+      map.zoomTo("6.5", { duration: 800 });
       
       // Clear manual transition flag after transition is complete
       setTimeout(() => setIsManualTransition(false), 500);
@@ -267,6 +279,10 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
 
     const map = mapRef.current?.getMap();
     if (!map) return;
+
+    // Store the selected zip boundary for display
+    setSelectedZipBoundary(feature);
+    setSelectedNeighborhoodBoundary(null);
 
     // const zipCode = feature.properties.ZIP_CODE_TEXT; // Available for future use
     
@@ -322,6 +338,9 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
     if (onNeighborhoodSelect) {
       onNeighborhoodSelect(neighborhoodId);
     }
+
+    // Store the selected neighborhood boundary for display
+    setSelectedNeighborhoodBoundary(feature);
     
     // Set manual transition flag to prevent handleMove from overriding
     setIsManualTransition(true);
@@ -393,15 +412,24 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
           setZipData(null);
           setNeighborhoodData(null);
           setSiteData(null);
+          // Clear all boundaries when going back to national view
+          setSelectedMarketBoundary(null);
+          setSelectedZipBoundary(null);
+          setSelectedNeighborhoodBoundary(null);
         } else if (targetView === "MARKET") {
           setCurrentView("MARKET");
           setCurrentNeighborhoods([]);
           setZipData(null);
           setSiteData(null);
+          // Clear zip and neighborhood boundaries when going to market view
+          setSelectedZipBoundary(null);
+          setSelectedNeighborhoodBoundary(null);
         } else if (targetView === "ZIP") {
           setCurrentView("ZIP");
           setCurrentNeighborhoods([]);
           setSiteData(null);
+          // Clear neighborhood boundaries when going to zip view
+          setSelectedNeighborhoodBoundary(null);
         } else if (targetView === "NEIGHBORHOOD") {
           setCurrentView("NEIGHBORHOOD");
           setSiteData(null);
@@ -505,6 +533,14 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
 
   // Get current view info for header
   const getViewInfo = () => {
+    // Add boundary indicator to description
+    const getBoundaryIndicator = () => {
+      if (selectedMarketBoundary) return " (Market boundary highlighted)";
+      if (selectedZipBoundary) return " (ZIP boundary highlighted)";
+      if (selectedNeighborhoodBoundary) return " (Neighborhood boundary highlighted)";
+      return "";
+    };
+
     switch (currentView) {
       case "NATIONAL":
         return {
@@ -516,25 +552,25 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
         return {
           title: currentMarket || "MARKET",
           subtitle: `${neighborhoodData?.features?.length || 0} NEIGHBORHOODS`,
-          description: "Market View"
+          description: "Market View" + getBoundaryIndicator()
         };
       case "ZIP":
         return {
           title: currentMarket || "ZIP CODES",
           subtitle: `${zipData?.features?.length || 0} Codes`,
-          description: currentMarket ? `${currentMarket} - ZIP Code View` : "ZIP Code View"
+          description: (currentMarket ? `${currentMarket} - ZIP Code View` : "ZIP Code View") + getBoundaryIndicator()
         };
       case "NEIGHBORHOOD":
         return {
           title: "NEIGHBORHOODS",
           subtitle: `${neighborhoodData?.features?.length || 0} AREAS`,
-          description: currentMarket ? `${currentMarket} - Neighborhood View` : "Neighborhood View"
+          description: (currentMarket ? `${currentMarket} - Neighborhood View` : "Neighborhood View") + getBoundaryIndicator()
         };
       case "SITE":
         return {
           title: "SITES",
           subtitle: `${siteData?.sites?.length || 0} TOWERS`,
-          description: currentNeighborhoods.length > 0 ? `Neighborhood: ${currentNeighborhoods.join(", ")}` : "Site View"
+          description: (currentNeighborhoods.length > 0 ? `Neighborhood: ${currentNeighborhoods.join(", ")}` : "Site View") + getBoundaryIndicator()
         };
       default:
         return { title: "", subtitle: "", description: "" };
@@ -549,6 +585,10 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
     setZipData(null);
     setNeighborhoodData(null);
     setSiteData(null);
+    // Clear all boundaries
+    setSelectedMarketBoundary(null);
+    setSelectedZipBoundary(null);
+    setSelectedNeighborhoodBoundary(null);
   }, []);
 
   // Handle control hover to hide tooltip
@@ -576,7 +616,14 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
         mapStyle={MAP_STYLE}
         onMoveEnd={handleMapChange}
         onDragEnd={handleMapChange}
-        interactiveLayerIds={["market-fill", "neighborhood-fill", "zip-fill"]}
+        interactiveLayerIds={[
+          "market-fill", 
+          "neighborhood-fill", 
+          "zip-fill",
+          "selected-market-boundary",
+          "selected-zip-boundary", 
+          "selected-neighborhood-boundary"
+        ]}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={currentView === "NATIONAL" ? handleMarketClick : 
@@ -597,15 +644,29 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
           <NeighborhoodLayer neighborhoodData={neighborhoodData} />
         )}
         
-        {/* Site Layer - Visible for site view */}
-        {currentView === "SITE" && <SiteLayer siteData={siteData} setTooltip={setTooltip} setSelectedSiteId={setSelectedSiteId}  />}
-      </MapGL>
+                 {/* Site Layer - Visible for site view */}
+         {currentView === "SITE" && <SiteLayer siteData={siteData} setTooltip={setTooltip} setSelectedSiteId={setSelectedSiteId}  />}
+         
+         {/* Selected Boundary Layer - Always visible when there's a selected entity (rendered on top) */}
+         <SelectedBoundaryLayer 
+           selectedMarketBoundary={selectedMarketBoundary}
+           selectedZipBoundary={selectedZipBoundary}
+           selectedNeighborhoodBoundary={selectedNeighborhoodBoundary}
+         />
+       </MapGL>
 
       {/* Map Header */}
       <MapHeader viewInfo={getViewInfo()} onHeaderHover={handleHeaderHover} />
 
       {/* Map Controls */}
       <MapControls mapRef={mapRef} onResetView={handleResetView} onControlHover={handleControlHover} />
+
+      {/* Boundary Legend */}
+      {/* <BoundaryLegend 
+        selectedMarketBoundary={selectedMarketBoundary}
+        selectedZipBoundary={selectedZipBoundary}
+        selectedNeighborhoodBoundary={selectedNeighborhoodBoundary}
+      /> */}
 
       {/* Tooltip */}
       <MapTooltip

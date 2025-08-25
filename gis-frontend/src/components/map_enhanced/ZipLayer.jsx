@@ -71,16 +71,23 @@ const ZipLayer = ({ zipData }) => {
         "case",
         ["boolean", ["feature-state", "hover"], false],
         "#e20074", // Hover color (pink/red)
+        // [
+        //   "interpolate",
+        //   ["linear"],
+        //   ["get", "SHAPE_Area"],
+        //   0, "#f8f9fa",     // Very light gray for small areas
+        //   0.0001, "#e8f4f8",    // Light blue-gray
+        //   0.0002, "#d1e7dd",    // Light green-gray
+        //   0.0003, "#fff3cd",    // Light yellow
+        //   0.0004, "#f8d7da",    // Light red
+        //   0.0005, "#d1ecf1"    // Light cyan
+        // ]
+        // "#e5e5e5"
         [
-          "interpolate",
-          ["linear"],
-          ["get", "SHAPE_Area"],
-          0, "#f8f9fa",     // Very light gray for small areas
-          0.0001, "#e8f4f8",    // Light blue-gray
-          0.0002, "#d1e7dd",    // Light green-gray
-          0.0003, "#fff3cd",    // Light yellow
-          0.0004, "#f8d7da",    // Light red
-          0.0005, "#d1ecf1"    // Light cyan
+          "case",
+          ["in", ["get", "ZCTA5CE10"], ["literal", ["98148", "98166", "98225"]]],
+          "#FF0000", // Darker gray for specific ZIP codes
+          "#e5e5e5"  // Regular gray for other ZIP codes
         ]
       ],
       "fill-opacity": [
