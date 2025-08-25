@@ -27,10 +27,14 @@ import {
   getMarketKpiByMarketId,
   getZipKpiByZipId,
   getNeighborhoodKpiByNeighborhoodId,
-  getHexKpiByHexId,
+  // getHexKpiByHexId,
   getSiteKpiBySiteId,
 } from "../services/kpiApiService";
-import { getCountMarketById,getCountNeighborhoodById } from "../services/countKpiApiService";
+import {
+  getCountMarketById,
+  getCountNeighborhoodById,
+  getCountZipById,
+} from "../services/countKpiApiService";
 import AnimatedCounter from "../components/counter/AnimatedCounter";
 import PieChart from "../components/charts/PieChart";
 
@@ -75,11 +79,11 @@ const Dashboard = () => {
       setIsData("success");
       const response = await getMarketKpiByMarketId(marketId);
       console.log("Market KPI:", response);
-      // 🔥 here you can also update state if you want to display the KPIs
+      //  here you can also update state if you want to display the KPIs
       if (response?.data?.length > 0) {
         const first = response.data[0];
 
-        // 🔥 set states using API values
+        // set states using API values
         setAvgDcr(first.ret_volte_drop_rate_4g); // DCR
         setSitePoorChnlQlty(first.qual_avg_cqi_4g); // Poor Channel Quality
         setAvgSINR5G(first.qual_ue_avg_sinr_pusch_5g); // SINR 5G
@@ -108,10 +112,30 @@ const Dashboard = () => {
         setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g);
       }
       const countData = await getCountNeighborhoodById(neighborhoodId);
+      // const countData = await getCountNeighborhoodById('BG530330279012');
       const siteCount = countData.data[0]["COUNT(neighborhood_id)"];
       setTotalSites(siteCount);
     } catch (error) {
       console.error("Error fetching Neighborhood KPI:", error);
+    }
+  };
+
+  const handleZipSelect = async (zipCode) => {
+    try {
+      const response = await getZipKpiByZipId(zipCode);
+      if (response?.data?.length > 0) {
+        const first = response.data[0];
+        setAvgDcr(first.ret_volte_drop_rate_4g);
+        setSitePoorChnlQlty(first.qual_avg_cqi_4g);
+        setAvgSINR5G(first.qual_ue_avg_sinr_pusch_5g);
+        setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g);
+      }
+      const countData = await getCountZipById(zipCode);
+      // const countData = await getCountZipById(98148);
+      const zipCount = countData.data[0]["COUNT(zip_code)"];
+      setTotalSites(zipCount);
+    } catch (error) {
+      console.error("Error fetching ZIP KPI:", error);
     }
   };
 
@@ -125,7 +149,10 @@ const Dashboard = () => {
     try {
       if (view === "MARKET" && context.marketId) {
         await handleMarketSelect(context.marketId);
-      } else if (view === "NEIGHBORHOOD" && context.neighborhoodIds?.length > 0) {
+      } else if (
+        view === "NEIGHBORHOOD" &&
+        context.neighborhoodIds?.length > 0
+      ) {
         await handleNeighborhoodSelect(context.neighborhoodIds[0]);
       } else if (view === "NATIONAL") {
         // reset to some default or clear KPIs
@@ -137,6 +164,17 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error in handleViewChange:", error);
     }
+  };
+
+  const handleGlobeClick = () => {
+    setAvgDcr(0.07);
+    setSitePoorChnlQlty(345);
+    setAvgSINR5G(16.78);
+    setAvgSINR4G(6.75);
+    setTotalSites(82723);
+
+    // Reset map view KPIs via handleViewChange
+    handleViewChange("NATIONAL", {});
   };
 
   return (
@@ -178,6 +216,8 @@ const Dashboard = () => {
               onNeighborhoodSelect={handleNeighborhoodSelect}
               onViewChange={handleViewChange}
               setSelectedSiteId={setSelectedSiteId}
+              onGlobeClick={handleGlobeClick}
+              onZipSelect={handleZipSelect}
             />
           </MiddleCenter>
 
@@ -205,10 +245,7 @@ const Dashboard = () => {
                         lineHeight: 1.1,
                       }}
                     >
-                      <AnimatedCounter
-                        target={totalSites}
-                        duration={800}
-                      />
+                      <AnimatedCounter target={totalSites} duration={800} />
                     </div>
                     <div
                       style={{

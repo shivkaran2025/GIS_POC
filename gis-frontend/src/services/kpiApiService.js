@@ -1,5 +1,4 @@
 const BASE_URL = "http://localhost:5000"; 
-// ab sirf 5000 tak hi rakha hai
 
 // Helper function to handle fetch requests
 async function apiRequest(endpoint) {

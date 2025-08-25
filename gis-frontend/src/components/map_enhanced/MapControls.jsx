@@ -6,7 +6,7 @@ const INITIAL_VIEW = {
   zoom: 3.5,
 };
 
-const MapControls = ({ mapRef, onResetView, onControlHover }) => {
+const MapControls = ({ mapRef, onResetView, onControlHover, onGlobeClick}) => {
   const handleZoomIn = () => {
     const map = mapRef?.current?.getMap();
     if (map) {
@@ -37,7 +37,9 @@ const MapControls = ({ mapRef, onResetView, onControlHover }) => {
       });
       
       // Call the parent's reset view function if provided
-      if (onResetView) {
+      if (onGlobeClick) {
+        onGlobeClick();
+      } else if (onResetView) {
         onResetView();
       }
     }

@@ -29,7 +29,7 @@ const SiteLayer = ({ siteData, setTooltip, setSelectedSiteId }) => {
   };
 
    const handleClick = (site) => {
-    setSelectedSiteId(site.site_id); // 👈 क्लिक पर Dashboard तक site_id भेजा
+    setSelectedSiteId(site.site_id);
   };
 
   const getSiteStatusColor = (site) => {
