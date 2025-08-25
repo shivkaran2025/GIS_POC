@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Marker } from "react-map-gl/maplibre";
 
-const SiteLayer = ({ siteData, setTooltip }) => {
+const SiteLayer = ({ siteData, setTooltip, setSelectedSiteId }) => {
   const [hoveredSite, setHoveredSite] = useState(null);
 
   if (!siteData || !siteData.sites) return null;
@@ -26,6 +26,10 @@ const SiteLayer = ({ siteData, setTooltip }) => {
         y: 0
       });
     }
+  };
+
+   const handleClick = (site) => {
+    setSelectedSiteId(site.site_id); // 👈 क्लिक पर Dashboard तक site_id भेजा
   };
 
   const getSiteStatusColor = (site) => {
@@ -170,6 +174,7 @@ const SiteLayer = ({ siteData, setTooltip }) => {
             longitude={lng}
             latitude={lat}
             anchor="bottom"
+            onClick={() => handleClick(site)}
           >
             <div
               onMouseEnter={() => handleSiteHover(site, true)}

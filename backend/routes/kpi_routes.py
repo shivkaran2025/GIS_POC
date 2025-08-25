@@ -15,13 +15,59 @@ def get_db_connection():
     from flask import current_app
     return current_app.extensions['sqlalchemy'].engine
 
+@kpi_bp.route('/count/<id_type>/<id_value>', methods=['GET'])
+def get_count_kpi_by_type_id(id_type, id_value):
+    """Get count of KPI records by type and id"""
+    valid_id_types = ['market', 'zip', 'hex', 'neighborhood', 'site']
+    
+    if id_type.lower() not in valid_id_types:
+        return jsonify({
+            "success": False,
+            "message": f"Invalid ID type. Must be one of: {', '.join(valid_id_types)}"
+        }), 400
+    
+    try:
+        engine = get_db_connection()
+        table_name = "geo_hierarchy_mapping" 
+        column_name = "zip_code" if id_type == "zip" else f"{id_type.lower()}_id"
+
+        with engine.connect() as connection:
+            query = text(f"SELECT DISTINCT COUNT({column_name}) FROM {table_name} WHERE {column_name} = :id_value")
+            result = connection.execute(query, {"id_value": id_value})
+            records = result.fetchall()
+            
+            if records:
+                data = [dict(record._mapping) for record in records]
+                return jsonify({
+                    "success": True,
+                    "data": data,
+                    "id_type": id_type,
+                    "id_value": id_value,
+                    "count": len(data),
+                    "message": f"Found {data} for {id_type.title()} KPI records"
+                }), 200
+            else:
+                return jsonify({
+                    "success": False,
+                    "message": f"No {id_type.title()} KPI records found for {column_name}: {id_value}"
+                }), 404
+                
+    except SQLAlchemyError as e:
+        logger.error(f"Database error in get_kpi_by_type_id: {str(e)}")
+        return jsonify({
+            "success": False,
+            "message": f"Database error: {str(e)}"
+        }), 500
+
+
+
 @kpi_bp.route('/market/<int:record_id>', methods=['GET'])
 def get_market_kpi_by_id(record_id):
     """Get market KPI record by ID"""
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM market_kpi WHERE id = :record_id")
+            query = text("SELECT id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM market_kpi WHERE id = :record_id")
             result = connection.execute(query, {"record_id": record_id})
             record = result.fetchone()
             
@@ -50,7 +96,7 @@ def get_market_kpi_by_market_id(market_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM market_kpi WHERE market_id = :market_id")
+            query = text("SELECT market_id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM market_kpi WHERE market_id = :market_id")
             result = connection.execute(query, {"market_id": market_id})
             records = result.fetchall()
             
@@ -81,7 +127,7 @@ def get_zip_kpi_by_id(record_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM zip_kpi WHERE id = :record_id")
+            query = text("SELECT id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM zip_kpi WHERE id = :record_id")
             result = connection.execute(query, {"record_id": record_id})
             record = result.fetchone()
             
@@ -110,7 +156,7 @@ def get_zip_kpi_by_zip_id(zip_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM zip_kpi WHERE zip_id = :zip_id")
+            query = text("SELECT zip_id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM zip_kpi WHERE zip_id = :zip_id")
             result = connection.execute(query, {"zip_id": zip_id})
             records = result.fetchall()
             
@@ -141,7 +187,7 @@ def get_hex_kpi_by_id(record_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM hex_kpi WHERE id = :record_id")
+            query = text("SELECT id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM hex_kpi WHERE id = :record_id")
             result = connection.execute(query, {"record_id": record_id})
             record = result.fetchone()
             
@@ -170,7 +216,7 @@ def get_hex_kpi_by_hex_id(hex_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM hex_kpi WHERE hex_id = :hex_id")
+            query = text("SELECT hex_id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM hex_kpi WHERE hex_id = :hex_id")
             result = connection.execute(query, {"hex_id": hex_id})
             records = result.fetchall()
             
@@ -201,7 +247,7 @@ def get_neighborhood_kpi_by_id(record_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM neighborhood_kpi WHERE id = :record_id")
+            query = text("SELECT id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM neighborhood_kpi WHERE id = :record_id")
             result = connection.execute(query, {"record_id": record_id})
             record = result.fetchone()
             
@@ -230,7 +276,7 @@ def get_neighborhood_kpi_by_neighborhood_id(neighborhood_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM neighborhood_kpi WHERE neighborhood_id = :neighborhood_id")
+            query = text("SELECT neighborhood_id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM neighborhood_kpi WHERE neighborhood_id = :neighborhood_id")
             result = connection.execute(query, {"neighborhood_id": neighborhood_id})
             records = result.fetchall()
             
@@ -261,7 +307,7 @@ def get_site_kpi_by_id(record_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM site_kpi WHERE id = :record_id")
+            query = text("SELECT id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM site_kpi WHERE id = :record_id")
             result = connection.execute(query, {"record_id": record_id})
             record = result.fetchone()
             
@@ -290,7 +336,7 @@ def get_site_kpi_by_site_id(site_id):
     try:
         engine = get_db_connection()
         with engine.connect() as connection:
-            query = text("SELECT * FROM site_kpi WHERE site_id = :site_id")
+            query = text("SELECT site_id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM site_kpi WHERE site_id = :site_id")
             result = connection.execute(query, {"site_id": site_id})
             records = result.fetchall()
             
@@ -340,7 +386,7 @@ def get_kpi_by_type_id(kpi_type, id_type, id_value):
         column_name = f"{id_type.lower()}_id"
         
         with engine.connect() as connection:
-            query = text(f"SELECT * FROM {table_name} WHERE {column_name} = :id_value")
+            query = text(f"SELECT id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM {table_name} WHERE {column_name} = :id_value")
             result = connection.execute(query, {"id_value": id_value})
             records = result.fetchall()
             
@@ -382,7 +428,7 @@ def get_kpi_by_id(kpi_type, record_id):
         table_name = f"{kpi_type.lower()}_kpi"
         
         with engine.connect() as connection:
-            query = text(f"SELECT * FROM {table_name} WHERE id = :record_id")
+            query = text(f"SELECT {kpi_type.lower()}_id, date_key, ret_volte_drop_rate_4g, qual_avg_cqi_4g, qual_ue_avg_sinr_pusch_5g, qual_ue_avg_sinr_pusch_4g FROM {table_name} WHERE id = :record_id")
             result = connection.execute(query, {"record_id": record_id})
             record = result.fetchone()
             

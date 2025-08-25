@@ -34,7 +34,7 @@ const ZOOM_LEVELS = {
   SITE: { min: 10.5, max: 22 }
 };
 
-const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange  }) => {
+const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSelectedSiteId  }) => {
   const [currentView, setCurrentView] = useState("NATIONAL");
   const [currentMarket, setCurrentMarket] = useState(null);
   const [currentNeighborhoods, setCurrentNeighborhoods] = useState([]);
@@ -598,7 +598,7 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange  }) =>
         )}
         
         {/* Site Layer - Visible for site view */}
-        {currentView === "SITE" && <SiteLayer siteData={siteData} setTooltip={setTooltip} />}
+        {currentView === "SITE" && <SiteLayer siteData={siteData} setTooltip={setTooltip} setSelectedSiteId={setSelectedSiteId}  />}
       </MapGL>
 
       {/* Map Header */}

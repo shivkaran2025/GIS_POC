@@ -69,7 +69,58 @@ Retrieve GeoJSON data with spatial filtering.
 GET /api/geojson?dataset=zip_codes&lat=40.7128&lng=-74.0060&radius=0.05
 ```
 
+## Count Endpoints
+
+### `GET /api/kpi/count/<id_type>/<id_value>`
+Get count of KPI records by type and ID value from the geo_hierarchy_mapping table.
+
+**Parameters:**
+- `id_type` (required): One of `market`, `zip`, `hex`, `neighborhood`, `site`
+- `id_value` (required): The specific ID value to count records for
+
+**Valid ID Types:**
+- `market` - Counts market_id records
+- `zip` - Counts zip_code records  
+- `hex` - Counts hex_id records
+- `neighborhood` - Counts neighborhood_id records
+- `site` - Counts site_id records
+
+**Example Requests:**
+```
+GET /api/kpi/count/zip/98148
+GET /api/kpi/count/market/Seattle WA
+GET /api/kpi/count/site/SE03878A
+GET /api/kpi/count/neighborhood/BG530330279012
+GET /api/kpi/count/hex/RU85001588
+```
+
+**Successful Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "COUNT(zip_code)": 165
+    }
+  ],
+  "id_type": "zip",
+  "id_value": "98148",
+  "count": 1,
+  "message": "Found [{'COUNT(zip_code)': 165}] for Zip KPI records"
+}
+```
+
+**Error Response (Invalid ID Type):**
+```json
+{
+  "success": false,
+  "message": "Invalid ID type. Must be one of: market, zip, hex, neighborhood, site"
+}
+```
+
 ## KPI Data Endpoints
+
+**Note:** These endpoints now work correctly after updating SQL queries to use `date_key` instead of `date`.
 
 All KPI endpoints support fetching by ID and by specific ID types:
 
@@ -99,6 +150,25 @@ All KPI endpoints support fetching by ID and by specific ID types:
 
 **Valid KPI Types:** `market`, `zip`, `hex`, `neighborhood`, `site`
 
+**Successful Response (Multiple Records):**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "date_key": "Mon, 19 Aug 2024 00:00:00 GMT",
+      "market_id": "Seattle WA",
+      "qual_avg_cqi_4g": 9.26374515813221,
+      "qual_ue_avg_sinr_pusch_4g": 6.91640073475448,
+      "qual_ue_avg_sinr_pusch_5g": 17.0174896442087,
+      "ret_volte_drop_rate_4g": 0.00801260330466651
+    }
+  ],
+  "count": 500,
+  "message": "Found 500 market KPI records"
+}
+```
+
 ## UI Compatibility Endpoints
 
 These endpoints maintain compatibility with existing frontend applications:
@@ -125,6 +195,38 @@ These endpoints maintain compatibility with existing frontend applications:
 - `GET /api/search` - Cross-dataset search functionality
 
 ## Sample API Responses
+
+### Count Response (Successful)
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "COUNT(market_id)": 1000
+    }
+  ],
+  "id_type": "market",
+  "id_value": "Seattle WA",
+  "count": 1,
+  "message": "Found [{'COUNT(market_id)': 1000}] for Market KPI records"
+}
+```
+
+### Count Response (Zero Records)
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "COUNT(site_id)": 0
+    }
+  ],
+  "id_type": "site",
+  "id_value": "SE03878A",
+  "count": 1,
+  "message": "Found [{'COUNT(site_id)': 0}] for Site KPI records"
+}
+```
 
 ### Successful Response (Single Record)
 ```json
@@ -196,17 +298,23 @@ These endpoints maintain compatibility with existing frontend applications:
 
 ## Database Tables
 
-The application works with 5 KPI tables:
+The application works with 6 tables:
 
 1. **market_kpi** - Market-level KPI data
 2. **zip_kpi** - ZIP code-level KPI data
 3. **hex_kpi** - Hex-level KPI data
 4. **neighborhood_kpi** - Neighborhood-level KPI data
 5. **site_kpi** - Site-level KPI data
+6. **geo_hierarchy_mapping** - Geographic hierarchy mapping table (used for count endpoints)
 
-Each table supports queries by:
+Each KPI table supports queries by:
 - Primary key (`id`)
 - Specific ID field (`market_id`, `zip_id`, `hex_id`, `neighborhood_id`, `site_id`)
+
+The geo_hierarchy_mapping table supports count queries by:
+- `market_id`, `zip_code`, `hex_id`, `neighborhood_id`, `site_id`
+
+**Note:** The KPI tables use `date_key` as the date column, and all API queries have been updated to use the correct column name.
 
 ## Error Handling
 
@@ -242,6 +350,22 @@ Each table supports queries by:
 {
   "success": false,
   "message": "Invalid KPI type. Must be one of: market, zip, hex, neighborhood, site"
+}
+```
+
+#### Invalid ID Type for Count
+```json
+{
+  "success": false,
+  "message": "Invalid ID type. Must be one of: market, zip, hex, neighborhood, site"
+}
+```
+
+#### Record Not Found (No Data)
+```json
+{
+  "success": false,
+  "message": "No site KPI records found for site_id: SE03878A"
 }
 ```
 
