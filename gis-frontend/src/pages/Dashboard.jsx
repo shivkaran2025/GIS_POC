@@ -30,6 +30,7 @@ import {
   getNeighborhoodKpiByNeighborhoodId,
   getSiteKpiBySiteId,
 } from "../services/kpiApiService";
+import { getCountMarketById,getCountNeighborhoodById } from "../services/countKpiApiService";
 import AnimatedCounter from "../components/counter/AnimatedCounter";
 import PieChart from "../components/charts/PieChart";
 
@@ -40,8 +41,8 @@ const Dashboard = () => {
   const [avgSINR5G, setAvgSINR5G] = useState(16.78);
   const [avgSINR4G, setAvgSINR4G] = useState(6.75);
   const [isData, setIsData] = useState("success");
-  const [market, setMarket] = useState("National");
   const [selectedSiteId, setSelectedSiteId] = useState(null);
+  const [totalSites, setTotalSites] = useState(82723);
   console.log("siteid", selectedSiteId);
 
   useEffect(() => {
@@ -70,7 +71,6 @@ const Dashboard = () => {
   }, [selectedSiteId]);
 
   const handleMarketSelect = async (marketId) => {
-    setMarket(marketId);
     try {
       setIsData("success");
       const response = await getMarketKpiByMarketId(marketId);
@@ -85,6 +85,9 @@ const Dashboard = () => {
         setAvgSINR5G(first.qual_ue_avg_sinr_pusch_5g); // SINR 5G
         setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g); // SINR 4G
       }
+      const countData = await getCountMarketById(marketId);
+      const siteCount = countData.data[0]["COUNT(market_id)"];
+      setTotalSites(siteCount);
     } catch (error) {
       setIsData("error");
       console.error("Error fetching KPI:", error);
@@ -92,6 +95,7 @@ const Dashboard = () => {
   };
 
   const handleZipSelect = async (zipId) => {
+    console.log("Zzz", zipId);
     try {
       const response = await getNeighborhoodKpiByNeighborhoodId(zipId);
       console.log("Zip KPI:", response);
@@ -104,6 +108,9 @@ const Dashboard = () => {
         setAvgSINR5G(first.qual_ue_avg_sinr_pusch_5g);
         setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g);
       }
+      const countData = await getCountNeighborhoodById(zipId);
+      const siteCount = countData.data[0]["COUNT(neighborhood_id)"];
+      setTotalSites(siteCount);
     } catch (error) {
       console.error("Error fetching ZIP KPI:", error);
     }
@@ -187,7 +194,35 @@ const Dashboard = () => {
             </h1>
 
             <ChartSection>
-              <PieChart />
+              {/* <PieChart /> */}
+              <PieChart
+                centerContent={
+                  <div style={{ textAlign: "center" }}>
+                    <div
+                      style={{
+                        fontSize: viewSizeCalculator(15, true),
+                        fontWeight: 700,
+                        color: "#333",
+                        lineHeight: 1.1,
+                      }}
+                    >
+                      <AnimatedCounter
+                        target={totalSites}
+                        duration={800}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        fontSize: viewSizeCalculator(12, true),
+                        fontWeight: 400,
+                        color: "#888",
+                      }}
+                    >
+                      Total Sites
+                    </div>
+                  </div>
+                }
+              />
             </ChartSection>
             <Border />
             <ProgressBarContainer>
@@ -210,7 +245,6 @@ const Dashboard = () => {
                       <AnimatedCounter
                         target={sitePoorChnlQlty}
                         duration={800}
-                        decimals={2}
                       />
                     </Information>
                     <Text>Sites with Poor Channel Quality</Text>

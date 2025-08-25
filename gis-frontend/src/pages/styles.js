@@ -117,7 +117,7 @@ export const InfoWrapper = styled.div`
   height: ${viewSizeCalculator(203, true)};
   display: flex;
   flex-direction: column;
-  gap: ${viewSizeCalculator(10, true)};
+  gap: ${viewSizeCalculator(5, true)};
 `;
 
 export const Text = styled.div`

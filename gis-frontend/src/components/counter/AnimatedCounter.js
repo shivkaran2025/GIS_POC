@@ -24,7 +24,7 @@ const AnimatedCounter = ({ target, duration = 400, decimals = 0 }) => {
     countUp(target, duration, setCount, decimals);
   }, [target, duration, decimals]);
 
-  return <>{count}</>; // 👈 sirf number return karega
+  return <>{count}</>; 
 };
 
 export default AnimatedCounter;
