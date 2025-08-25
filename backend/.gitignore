@@ -14,6 +14,7 @@ CDC_V3_NEIGHBORHOODS_SHAPEFILE.json
 site_lat_long_08132025.csv
 tmo_region_market.json
 Zip_Codes.geojson
+usa_zip_codes_geo_100m.json
 
 # Python
 .venv/

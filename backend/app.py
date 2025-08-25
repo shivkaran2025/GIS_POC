@@ -24,7 +24,7 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 
 # Load data files
-ZIP_CODES_FILE = 'Zip_Codes.geojson'
+ZIP_CODES_FILE = 'usa_zip_codes_geo_100m.json'
 MARKET_REGIONS_FILE = 'tmo_region_market.json'
 CDC_NEIGHBORHOODS_FILE = 'CDC_V3_NEIGHBORHOODS_SHAPEFILE.json'
 SITE_LOCATIONS_FILE = 'site_lat_long_08132025.csv'
@@ -603,6 +603,60 @@ def get_zip_codes():
             'message': f'Error retrieving ZIP codes: {str(e)}'
         }), 500
 
+def check_feature_in_bounds(feature, north, south, east, west):
+    """Check if a GeoJSON feature intersects with given bounds"""
+    try:
+        geometry = feature.get('geometry', {})
+        if not geometry:
+            return False
+        
+        geom_type = geometry.get('type')
+        coordinates = geometry.get('coordinates', [])
+        
+        if geom_type == 'Polygon':
+            # For Polygon: coordinates is [exterior_ring, hole1, hole2, ...]
+            # exterior_ring is [[lng1, lat1], [lng2, lat2], ...]
+            if coordinates and len(coordinates) > 0:
+                exterior_ring = coordinates[0]  # Get the exterior ring
+                for coord_pair in exterior_ring:
+                    if len(coord_pair) >= 2:  # Make sure it has lng, lat
+                        lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                        if west <= lng <= east and south <= lat <= north:
+                            return True
+        
+        elif geom_type == 'MultiPolygon':
+            # For MultiPolygon: coordinates is [polygon1, polygon2, ...]
+            # Each polygon is [exterior_ring, hole1, hole2, ...]
+            for polygon in coordinates:
+                if polygon and len(polygon) > 0:
+                    exterior_ring = polygon[0]  # Get the exterior ring of each polygon
+                    for coord_pair in exterior_ring:
+                        if len(coord_pair) >= 2:  # Make sure it has lng, lat
+                            lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                            if west <= lng <= east and south <= lat <= north:
+                                return True
+        
+        elif geom_type == 'Point':
+            # For Point: coordinates is [lng, lat]
+            if len(coordinates) >= 2:
+                lng, lat = float(coordinates[0]), float(coordinates[1])
+                return west <= lng <= east and south <= lat <= north
+        
+        elif geom_type == 'MultiPoint':
+            # For MultiPoint: coordinates is [[lng1, lat1], [lng2, lat2], ...]
+            for coord_pair in coordinates:
+                if len(coord_pair) >= 2:
+                    lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                    if west <= lng <= east and south <= lat <= north:
+                        return True
+        
+        return False
+        
+    except (IndexError, TypeError, KeyError, ValueError) as e:
+        logger.warning(f"Error checking bounds for feature: {str(e)}")
+        return False
+
+
 @app.route('/api/zip-codes/bounds', methods=['GET'])
 def get_zip_codes_by_bounds():
     """Get ZIP codes by bounds (UI compatibility)"""
@@ -624,35 +678,18 @@ def get_zip_codes_by_bounds():
                 'message': 'All bounds parameters (north, south, east, west) are required'
             }), 400
         
-        # Filter features within bounds
-        filtered_features = []
+        results = []
         for feature in zip_codes_data.get('features', []):
-            if 'geometry' in feature and 'coordinates' in feature['geometry']:
-                try:
-                    coords = feature['geometry']['coordinates']
-                    if isinstance(coords, list) and len(coords) > 0:
-                        if isinstance(coords[0], list):
-                            polygon_coords = coords[0]
-                        else:
-                            polygon_coords = coords
-                        
-                        # Check if any coordinate is within bounds
-                        for coord in polygon_coords:
-                            if isinstance(coord, list) and len(coord) >= 2:
-                                try:
-                                    lon = float(coord[0])
-                                    lat = float(coord[1])
-                                    if west <= lon <= east and south <= lat <= north:
-                                        filtered_features.append(feature)
-                                        break
-                                except (ValueError, TypeError):
-                                    continue
-                except Exception:
-                    continue
-        
+            if check_feature_in_bounds(feature, north, south, east, west):
+                results.append(feature)
+         
+        logger.info(f"Found {len(results)} ZIP codes out of {len(zip_codes_data.get('features', []))} total")
+
         return jsonify({
-            'type': 'FeatureCollection',
-            'features': filtered_features
+            "dataset": "zip_codes",
+            "bounds": {"north": north, "south": south, "east": east, "west": west},
+            "count": len(results),
+            "features": results
         }), 200
         
     except Exception as e:

@@ -173,6 +173,23 @@ export const getZipCodesByBounds = async (bounds, signal) => {
   }
 };
 
+// ZIP Layer API
+export const getZipDataByBounds = async (bounds, signal) => {
+  try {
+    const { north, south, east, west } = bounds;
+    const response = await fetch(
+      `${API_BASE_URL}/api/zip-codes/bounds?north=${north}&south=${south}&east=${east}&west=${west}`,
+      { signal }
+    );
+    if (!response.ok) throw new Error("Failed to fetch hex data by bounds");
+    return await response.json();
+  } catch (error) {
+    if (error.name === "AbortError") return null;
+    console.error("Error fetching hex data by bounds:", error);
+    return null;
+  }
+};
+
 // Helper function to get data by zoom level
 // export const getDataByZoomLevel = async (zoomLevel, bounds = null, signal) => {
 //   try {

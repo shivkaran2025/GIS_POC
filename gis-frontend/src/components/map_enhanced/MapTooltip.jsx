@@ -48,6 +48,20 @@ const MapTooltip = ({ visible, content, x, y }) => {
            </div>
          </div>
        );
+    } else if (properties.ZCTA5CE10) {
+      // ZIP code tooltip
+      return (
+        <div>
+          <div style={{ fontWeight: "bold", fontSize: "14px", marginBottom: "4px" }}>
+            ZIP Code
+          </div>
+          <div style={{ fontSize: "12px", color: "#666" }}>
+            <div>ZIP: {properties.ZCTA5CE10}</div>
+            <div>State: {properties.STATEFP10 || "N/A"}</div>
+            <div>GEOID: {properties.GEOID10 || "N/A"}</div>
+          </div>
+        </div>
+      );
     }
     
     return (
