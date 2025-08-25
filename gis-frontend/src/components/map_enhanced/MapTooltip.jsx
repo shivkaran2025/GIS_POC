@@ -33,15 +33,15 @@ const MapTooltip = ({ visible, content, x, y }) => {
           </div>
         </div>
       );
-         } else if (properties.zip_code) {
-       // ZIP code tooltip
+         } else if (properties.neighborhood_name) {
+       // Neighborhood tooltip
        return (
          <div>
            <div style={{ fontWeight: "bold", fontSize: "14px", marginBottom: "4px" }}>
              Hexagonal Area
            </div>
            <div style={{ fontSize: "12px", color: "#666" }}>
-             <div>ZIP: {properties.zip_code}</div>
+             <div>Neighborhood: {properties.neighborhood_name}</div>
              <div>Sites: {properties.site_count || 0}</div>
              <div>Density: {properties.density ? `${properties.density.toFixed(1)}%` : "N/A"}</div>
              <div>Performance: {properties.performance ? `${properties.performance.toFixed(1)}` : "N/A"}</div>

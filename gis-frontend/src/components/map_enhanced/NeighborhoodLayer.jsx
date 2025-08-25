@@ -1,37 +1,37 @@
 import React, { useEffect } from "react";
 import { Source, Layer } from "react-map-gl/maplibre";
 
-const ZipCodeLayer = ({ zipData }) => {
+const NeighborhoodLayer = ({ neighborhoodData }) => {
   useEffect(() => {
-    console.log("ZipCodeLayer received data:", zipData);
-    if (zipData) {
-      console.log("Data type:", zipData.type);
-      console.log("Features count:", zipData.features?.length || 0);
-      if (zipData.features && zipData.features.length > 0) {
-        console.log("First feature:", zipData.features[0]);
+    console.log("NeighborhoodLayer received data:", neighborhoodData);
+    if (neighborhoodData) {
+      console.log("Data type:", neighborhoodData.type);
+      console.log("Features count:", neighborhoodData.features?.length || 0);
+      if (neighborhoodData.features && neighborhoodData.features.length > 0) {
+        console.log("First feature:", neighborhoodData.features[0]);
       }
     }
-  }, [zipData]);
+  }, [neighborhoodData]);
 
-  if (!zipData) {
-    console.log("No data provided to ZipCodeLayer");
+  if (!neighborhoodData) {
+    console.log("No data provided to NeighborhoodLayer");
     return null;
   }
 
   // Improved data normalization similar to NeighborhoodLayer
   const geojsonData = (() => {
     try {
-      if (zipData.type === "FeatureCollection") {
-        return zipData;
+      if (neighborhoodData.type === "FeatureCollection") {
+        return neighborhoodData;
       }
 
       let features = [];
-      if (Array.isArray(zipData.features)) {
-        features = zipData.features;
-      } else if (zipData.feature) {
-        features = [zipData.feature];
-      } else if (Array.isArray(zipData)) {
-        features = zipData;
+      if (Array.isArray(neighborhoodData.features)) {
+        features = neighborhoodData.features;
+      } else if (neighborhoodData.feature) {
+        features = [neighborhoodData.feature];
+      } else if (Array.isArray(neighborhoodData)) {
+        features = neighborhoodData;
       }
 
       const normalized = {
@@ -57,15 +57,15 @@ const ZipCodeLayer = ({ zipData }) => {
   })();
 
   if (!geojsonData.features || geojsonData.features.length === 0) {
-    console.warn("No valid polygon features found in ZIP data");
+    console.warn("No valid polygon features found in neighborhood data");
     return null;
   }
 
   // Create grayscale fill layer similar to the image
   const fillLayer = {
-    id: "zip-fill",
+    id: "neighborhood-fill",
     type: "fill",
-    source: "zip",
+    source: "neighborhood",
     paint: {
       "fill-color": [
         "case",
@@ -94,9 +94,9 @@ const ZipCodeLayer = ({ zipData }) => {
 
   // Create outline layer with white borders
   const lineLayer = {
-    id: "zip-outline",
+    id: "neighborhood-outline",
     type: "line",
-    source: "zip",
+    source: "neighborhood",
     paint: {
       "line-color": "#ffffff",
       "line-width": [
@@ -114,13 +114,13 @@ const ZipCodeLayer = ({ zipData }) => {
     }
   };
 
-  // Create label layer for ZIP codes
+  // Create label layer for neighborhoods
   const labelLayer = {
-    id: "zip-label",
+    id: "neighborhood-label",
     type: "symbol",
-    source: "zip",
+    source: "neighborhood",
     layout: {
-      "text-field": ["get", "zip_code"],
+      "text-field": ["get", "neighborhood_name"],
       "text-font": ["Open Sans Regular"],
       "text-size": [
         "interpolate",
@@ -147,7 +147,7 @@ const ZipCodeLayer = ({ zipData }) => {
   };
 
   return (
-    <Source id="zip" type="geojson" data={geojsonData} generateId={true}>
+    <Source id="neighborhood" type="geojson" data={geojsonData} generateId={true}>
       <Layer {...fillLayer} />
       <Layer {...lineLayer} />
       <Layer {...labelLayer} />
@@ -155,4 +155,4 @@ const ZipCodeLayer = ({ zipData }) => {
   );
 };
 
-export default ZipCodeLayer;
+export default NeighborhoodLayer;

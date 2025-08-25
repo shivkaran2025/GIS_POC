@@ -10,7 +10,7 @@ import {
 } from "../../services/apiService";
 
 import MarketLayer from "./MarketLayer";
-import ZipCodeLayer from "./ZipCodeLayer";
+import NeighborhoodLayer from "./NeighborhoodLayer";
 import SiteLayer from "./SiteLayer";
 import MapTooltip from "./MapTooltip";
 import MapHeader from "./MapHeader";
@@ -27,18 +27,17 @@ const INITIAL_VIEW = {
 const ZOOM_LEVELS = {
   NATIONAL: { min: 0, max: 5 },
   MARKET: { min: 5, max: 7 },
-  ZIP: { min: 8, max: 9.5 },
+  NEIGHBORHOOD: { min: 8, max: 9.5 },
   SITE: { min: 9.5, max: 22 }
 };
 
-const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
+const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange  }) => {
   const [currentView, setCurrentView] = useState("NATIONAL");
   const [currentMarket, setCurrentMarket] = useState(null);
-  const [currentZipCodes, setCurrentZipCodes] = useState([]);
+  const [currentNeighborhoods, setCurrentNeighborhoods] = useState([]);
   
   const [marketData, setMarketData] = useState(null);
-  console.log("mraket data",marketData);
-  const [zipData, setZipData] = useState(null);
+  const [neighborhoodData, setNeighborhoodData] = useState(null);
   const [siteData, setSiteData] = useState(null);
   
   const [loading, setLoading] = useState(false);
@@ -56,15 +55,15 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
   const mapRef = useRef(null);
   const hoveredFeatureIdRef = useRef(null);
   const siteCacheRef = useRef({});
-  const zipCacheRef = useRef({});
+  const neighborhoodCacheRef = useRef({});
 
   // Cache key functions
   const makeSiteCacheKey = (centerLat, centerLng, radius) => {
     return `site_${centerLat.toFixed(2)}_${centerLng.toFixed(2)}_${radius.toFixed(2)}`;
   };
 
-  const makeZipCacheKey = (north, south, east, west) => {
-    return `zip_${north.toFixed(3)}_${south.toFixed(3)}_${east.toFixed(3)}_${west.toFixed(3)}`;
+  const makeNeighborhoodCacheKey = (north, south, east, west) => {
+    return `neighborhood_${north.toFixed(3)}_${south.toFixed(3)}_${east.toFixed(3)}_${west.toFixed(3)}`;
   };
 
   // Initial market data load
@@ -96,13 +95,13 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
     return { centerLat, centerLng, radius, bounds };
   }, []);
 
-  // Load ZIP codes for current market area
-  const loadZipCodes = useCallback(async (bounds) => {
+  // Load neighborhoods for current market area
+  const loadNeighborhoods = useCallback(async (bounds) => {
     const { north, south, east, west } = bounds;
-    const cacheKey = makeZipCacheKey(north, south, east, west);
+    const cacheKey = makeNeighborhoodCacheKey(north, south, east, west);
 
-    if (zipCacheRef.current[cacheKey]) {
-      setZipData(zipCacheRef.current[cacheKey]);
+    if (neighborhoodCacheRef.current[cacheKey]) {
+      setNeighborhoodData(neighborhoodCacheRef.current[cacheKey]);
       return;
     }
 
@@ -110,12 +109,12 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
     try {
       const data = await getCdcNeighborhoodsByBounds({ north, south, east, west });
       if (data) {
-        console.log("loadZipCodes", data);
-        setZipData(data);
-        zipCacheRef.current[cacheKey] = data;
+        console.log("loadNeighborhoods", data);
+        setNeighborhoodData(data);
+        neighborhoodCacheRef.current[cacheKey] = data;
       }
     } catch (error) {
-      console.error("Error loading ZIP codes:", error);
+      console.error("Error loading neighborhoods:", error);
     } finally {
       setLoading(false);
     }
@@ -140,12 +139,12 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
     }
 
     
-    // If we're already in MARKET view and clicking on the same market, zoom to ZIP level
+    // If we're already in MARKET view and clicking on the same market, zoom to neighborhood level
     if (currentView === "MARKET" && currentMarket === marketName) {
       // Set manual transition flag to prevent handleMove from overriding
       setIsManualTransition(true);
       
-      // Zoom to ZIP code level for this market
+      // Zoom to neighborhood level for this market
       const [minLng, minLat, maxLng, maxLat] = bbox(feature);
       map.fitBounds(
         [
@@ -156,13 +155,13 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
       );
 
       map.once("moveend", async () => {
-        // Zoom to ZIP level
-        const targetZoom = Math.max(ZOOM_LEVELS.ZIP.min, map.getZoom());
+        // Zoom to neighborhood level
+        const targetZoom = Math.max(ZOOM_LEVELS.NEIGHBORHOOD.min, map.getZoom());
         map.zoomTo(targetZoom, { duration: 800 });
         
-        // Load ZIP codes for the current area after zoom
+        // Load neighborhoods for the current area after zoom
         const bounds = map.getBounds();
-        await loadZipCodes({
+        await loadNeighborhoods({
           north: bounds.getNorth(),
           south: bounds.getSouth(),
           east: bounds.getEast(),
@@ -173,7 +172,7 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
         setTimeout(() => setIsManualTransition(false), 500);
       });
 
-      setCurrentView("ZIP");
+      setCurrentView("NEIGHBORHOOD");
       return;
     }
 
@@ -200,7 +199,7 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
     });
 
     setCurrentView("MARKET");
-  }, [currentView, currentMarket, loadZipCodes]);
+  }, [currentView, currentMarket, loadNeighborhoods]);
 
   // Load sites for current area
   const loadSites = useCallback(async (centerLat, centerLng, radius) => {
@@ -226,28 +225,28 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
     }
   }, []);
 
-  // Handle ZIP code click to zoom into ZIP area
-  const handleZipClick = useCallback((evt) => {
+  // Handle neighborhood click to zoom into neighborhood area
+  const handleNeighborhoodClick = useCallback((evt) => {
     if (!evt.features || evt.features.length === 0) return;
 
     const feature = evt.features[0];
-    if (!feature || feature.layer.id !== "zip-fill") return;
+    if (!feature || feature.layer.id !== "neighborhood-fill") return;
 
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    const zipCode = feature.properties.zip_code;
+    const neighborhoodName = feature.properties.neighborhood_name;
 
-    const ZipID = feature.properties.ID
-    console.log("zipcode", ZipID);
+    const neighborhoodId = feature.properties.ID
+    console.log("neighborhood", neighborhoodId);
 
-    if (onZipSelect) {
-      onZipSelect(ZipID);
+    if (onNeighborhoodSelect) {
+      onNeighborhoodSelect(neighborhoodId);
     }
     
     // Set manual transition flag to prevent handleMove from overriding
     setIsManualTransition(true);
-    setCurrentZipCodes([zipCode]);
+    setCurrentNeighborhoods([neighborhoodName]);
 
     const [minLng, minLat, maxLng, maxLat] = bbox(feature);
     map.fitBounds(
@@ -292,8 +291,8 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
         targetView = "NATIONAL";
       } else if (zoom >= ZOOM_LEVELS.MARKET.min && zoom <= ZOOM_LEVELS.MARKET.max) {
         targetView = "MARKET";
-      } else if (zoom >= ZOOM_LEVELS.ZIP.min && zoom <= ZOOM_LEVELS.ZIP.max) {
-        targetView = "ZIP";
+      } else if (zoom >= ZOOM_LEVELS.NEIGHBORHOOD.min && zoom <= ZOOM_LEVELS.NEIGHBORHOOD.max) {
+        targetView = "NEIGHBORHOOD";
       } else if (zoom >= ZOOM_LEVELS.SITE.min) {
         targetView = "SITE";
       }
@@ -304,20 +303,20 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
          setCurrentView(targetView);
 
         if (onViewChange) {
-          onViewChange(targetView, { marketId: currentMarket, zipIds: currentZipCodes });
+          onViewChange(targetView, { marketId: currentMarket, neighborhoodIds: currentNeighborhoods });
         }
         if (targetView === "NATIONAL") {
           setCurrentView("NATIONAL");
           setCurrentMarket(null);
-          setCurrentZipCodes([]);
-          setZipData(null);
+          setCurrentNeighborhoods([]);
+          setNeighborhoodData(null);
           setSiteData(null);
         } else if (targetView === "MARKET") {
           setCurrentView("MARKET");
-          setCurrentZipCodes([]);
+          setCurrentNeighborhoods([]);
           setSiteData(null);
-        } else if (targetView === "ZIP") {
-          setCurrentView("ZIP");
+        } else if (targetView === "NEIGHBORHOOD") {
+          setCurrentView("NEIGHBORHOOD");
           setSiteData(null);
         } else if (targetView === "SITE") {
           setCurrentView("SITE");
@@ -326,8 +325,8 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
 
       // Load data for current view (whether view changed or just area changed)
       const bounds = map.getBounds();
-      if (targetView === "MARKET" || targetView === "ZIP") {
-        await loadZipCodes({
+      if (targetView === "MARKET" || targetView === "NEIGHBORHOOD") {
+        await loadNeighborhoods({
           north: bounds.getNorth(),
           south: bounds.getSouth(),
           east: bounds.getEast(),
@@ -341,7 +340,7 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
       console.error("Error in handleMapChange:", error);
       setLoading(false);
     }
-  }, [currentView, loadZipCodes, loadSites, getBoundsData, isManualTransition]);
+  }, [currentView, loadNeighborhoods, loadSites, getBoundsData, isManualTransition]);
 
   // Handle mouse interactions for tooltips
   const handleMouseMove = useCallback((evt) => {
@@ -366,8 +365,8 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
       try {
         if (feature.layer.id === "market-fill") {
           map.setFeatureState({ source: "market", id: prevId }, { hover: false });
-        } else if (feature.layer.id === "zip-fill") {
-          map.setFeatureState({ source: "zip", id: prevId }, { hover: false });
+        } else if (feature.layer.id === "neighborhood-fill") {
+          map.setFeatureState({ source: "neighborhood", id: prevId }, { hover: false });
         }
       } catch {}
     }
@@ -376,8 +375,8 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
       try {
         if (feature.layer.id === "market-fill") {
           map.setFeatureState({ source: "market", id: newId }, { hover: true });
-        } else if (feature.layer.id === "zip-fill") {
-          map.setFeatureState({ source: "zip", id: newId }, { hover: true });
+        } else if (feature.layer.id === "neighborhood-fill") {
+          map.setFeatureState({ source: "neighborhood", id: newId }, { hover: true });
         }
         hoveredFeatureIdRef.current = newId;
       } catch {}
@@ -398,7 +397,7 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
     if (map && prevId !== null) {
       try {
         map.setFeatureState({ source: "market", id: prevId }, { hover: false });
-        map.setFeatureState({ source: "zip", id: prevId }, { hover: false });
+        map.setFeatureState({ source: "neighborhood", id: prevId }, { hover: false });
       } catch {}
     }
     hoveredFeatureIdRef.current = null;
@@ -417,20 +416,20 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
       case "MARKET":
         return {
           title: currentMarket || "MARKET",
-          subtitle: `${zipData?.features?.length || 0} ZIP CODES`,
+          subtitle: `${neighborhoodData?.features?.length || 0} NEIGHBORHOODS`,
           description: "Market View"
         };
-      case "ZIP":
+      case "NEIGHBORHOOD":
         return {
-          title: "ZIP CODES",
-          subtitle: `${zipData?.features?.length || 0} AREAS`,
+          title: "NEIGHBORHOODS",
+          subtitle: `${neighborhoodData?.features?.length || 0} AREAS`,
           description: "Hexagonal Grid"
         };
       case "SITE":
         return {
           title: "SITES",
           subtitle: `${siteData?.sites?.length || 0} TOWERS`,
-          description: currentZipCodes.length > 0 ? `ZIP: ${currentZipCodes.join(", ")}` : "Site View"
+          description: currentNeighborhoods.length > 0 ? `Neighborhood: ${currentNeighborhoods.join(", ")}` : "Site View"
         };
       default:
         return { title: "", subtitle: "", description: "" };
@@ -441,8 +440,8 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
   const handleResetView = useCallback(() => {
     setCurrentView("NATIONAL");
     setCurrentMarket(null);
-    setCurrentZipCodes([]);
-    setZipData(null);
+    setCurrentNeighborhoods([]);
+    setNeighborhoodData(null);
     setSiteData(null);
   }, []);
 
@@ -471,18 +470,18 @@ const EnhancedMap = ({ onMarketSelect, onZipSelect, onViewChange  }) => {
         mapStyle={MAP_STYLE}
         onMoveEnd={handleMapChange}
         onDragEnd={handleMapChange}
-        interactiveLayerIds={["market-fill", "zip-fill"]}
+        interactiveLayerIds={["market-fill", "neighborhood-fill"]}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={currentView === "NATIONAL" || currentView === "MARKET" ? handleMarketClick : 
-                currentView === "ZIP" ? handleZipClick : undefined}
+                currentView === "NEIGHBORHOOD" ? handleNeighborhoodClick : undefined}
       >
         {/* Market Layer - Visible for national and market views */}
         {(currentView === "NATIONAL" || currentView === "MARKET") && <MarketLayer marketData={marketData} />}
         
-        {/* ZIP Code Layer - Visible for market and zip views */}
-        {(currentView === "ZIP") && (
-          <ZipCodeLayer zipData={zipData} />
+        {/* Neighborhood Layer - Visible for market and neighborhood views */}
+        {(currentView === "NEIGHBORHOOD") && (
+          <NeighborhoodLayer neighborhoodData={neighborhoodData} />
         )}
         
         {/* Site Layer - Visible for site view */}

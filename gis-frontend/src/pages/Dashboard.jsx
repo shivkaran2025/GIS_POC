@@ -25,8 +25,8 @@ import { EnhancedMap } from "../components/map_enhanced";
 import {
   getMarketKpiByMarketId,
   getZipKpiByZipId,
-  getHexKpiByHexId,
   getNeighborhoodKpiByNeighborhoodId,
+  getHexKpiByHexId,
   getSiteKpiBySiteId,
 } from "../services/kpiApiService";
 
@@ -61,10 +61,10 @@ const Dashboard = () => {
     }
   };
 
-  const handleZipSelect = async (zipId) => {
+  const handleNeighborhoodSelect = async (neighborhoodId) => {
     try {
-      const response = await getNeighborhoodKpiByNeighborhoodId(zipId);
-      console.log("Zip KPI:", response);
+      const response = await getNeighborhoodKpiByNeighborhoodId(neighborhoodId);
+      console.log("Neighborhood KPI:", response);
 
       if (response?.data?.length > 0) {
         const first = response.data[0];
@@ -75,7 +75,7 @@ const Dashboard = () => {
         setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g);
       }
     } catch (error) {
-      console.error("Error fetching ZIP KPI:", error);
+      console.error("Error fetching Neighborhood KPI:", error);
     }
   };
 
@@ -89,8 +89,8 @@ const Dashboard = () => {
     try {
       if (view === "MARKET" && context.marketId) {
         await handleMarketSelect(context.marketId);
-      } else if (view === "ZIP" && context.zipIds?.length > 0) {
-        await handleZipSelect(context.zipIds[0]);
+      } else if (view === "NEIGHBORHOOD" && context.neighborhoodIds?.length > 0) {
+        await handleNeighborhoodSelect(context.neighborhoodIds[0]);
       } else if (view === "NATIONAL") {
         // reset to some default or clear KPIs
         setAvgDcr(0.07);
@@ -139,7 +139,7 @@ const Dashboard = () => {
           <MiddleCenter>
             <EnhancedMap
               onMarketSelect={handleMarketSelect}
-              onZipSelect={handleZipSelect}
+              onNeighborhoodSelect={handleNeighborhoodSelect}
               onViewChange={handleViewChange}
             />
           </MiddleCenter>
