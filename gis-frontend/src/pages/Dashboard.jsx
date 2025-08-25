@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FooterSection,
   DashboardWrapper,
@@ -19,6 +19,7 @@ import {
 import Navbar from "../components/navbar/Navbar";
 import File from "../assets/Action_Button_Compare_Country_Container.svg";
 import Bell from "../assets/Bell.svg";
+import BarChart from "../assets/BarChart.svg";
 import Collapse from "../assets/collapse.svg";
 import { viewSizeCalculator } from "../utils/viewSizeCalculator";
 import { EnhancedMap } from "../components/map_enhanced";
@@ -29,6 +30,8 @@ import {
   getNeighborhoodKpiByNeighborhoodId,
   getSiteKpiBySiteId,
 } from "../services/kpiApiService";
+import AnimatedCounter from "../components/counter/AnimatedCounter";
+import PieChart from "../components/charts/PieChart";
 
 const Dashboard = () => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -38,6 +41,33 @@ const Dashboard = () => {
   const [avgSINR4G, setAvgSINR4G] = useState(6.75);
   const [isData, setIsData] = useState("success");
   const [market, setMarket] = useState("National");
+  const [selectedSiteId, setSelectedSiteId] = useState(null);
+  console.log("siteid", selectedSiteId);
+
+  useEffect(() => {
+    if (selectedSiteId) {
+      const fetchSiteKpi = async () => {
+        try {
+          const response = await getSiteKpiBySiteId(selectedSiteId);
+          console.log("Site KPI:", response);
+
+          if (response?.data?.length > 0) {
+            const first = response.data[0];
+
+            setAvgDcr(first.ret_volte_drop_rate_4g || 0);
+            setSitePoorChnlQlty(first.qual_avg_cqi_4g || 0);
+            setAvgSINR5G(first.qual_ue_avg_sinr_pusch_5g || 0);
+            setAvgSINR4G(first.qual_ue_avg_sinr_pusch_4g || 0);
+          }
+        } catch (err) {
+          console.error("Error fetching Site KPI:", err);
+          setIsData("error");
+        }
+      };
+
+      fetchSiteKpi();
+    }
+  }, [selectedSiteId]);
 
   const handleMarketSelect = async (marketId) => {
     setMarket(marketId);
@@ -141,6 +171,7 @@ const Dashboard = () => {
               onMarketSelect={handleMarketSelect}
               onZipSelect={handleZipSelect}
               onViewChange={handleViewChange}
+              setSelectedSiteId={setSelectedSiteId}
             />
           </MiddleCenter>
 
@@ -156,56 +187,81 @@ const Dashboard = () => {
             </h1>
 
             <ChartSection>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "700",
-                  color: "#e20074",
-                }}
-              >
-                {market}
-              </div>
-              <div style={{
-                  fontSize: "24px",
-                  fontWeight: "700",
-                  color: "#000000",
-              }}>Market
-              </div>
+              <PieChart />
             </ChartSection>
             <Border />
-            <ProgressBarContainer></ProgressBarContainer>
+            <ProgressBarContainer>
+              <img
+                src={BarChart}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+                alt=""
+                onClick={handleCollapseClick}
+              />
+            </ProgressBarContainer>
             <Border />
             {isData === "success" ? (
               <InfoWrapper>
                 <InformationContainer>
                   <InformationContent>
-                    <Information>{sitePoorChnlQlty.toFixed(2)}</Information>
+                    <Information>
+                      <AnimatedCounter
+                        target={sitePoorChnlQlty}
+                        duration={800}
+                        decimals={2}
+                      />
+                    </Information>
                     <Text>Sites with Poor Channel Quality</Text>
                   </InformationContent>
                   <InformationContent>
-                    <Information>{avgDcr.toFixed(2)}%</Information>
+                    <Information>
+                      <AnimatedCounter
+                        target={avgDcr}
+                        duration={800}
+                        decimals={2}
+                      />
+                      %
+                    </Information>
                     <Text>Average DCR</Text>
                   </InformationContent>
                 </InformationContainer>
 
                 <InformationContainer>
                   <InformationContent>
-                    <Information>{avgSINR5G.toFixed(2)}</Information>
+                    <Information>
+                      <AnimatedCounter
+                        target={avgSINR5G}
+                        duration={800}
+                        decimals={2}
+                      />
+                    </Information>
                     <Text>AVG SINR for Uplink PUSCH 5G</Text>
                   </InformationContent>
                   <InformationContent>
-                    <Information>{avgSINR4G.toFixed(2)}</Information>
+                    <Information>
+                      <AnimatedCounter
+                        target={avgSINR4G}
+                        duration={800}
+                        decimals={2}
+                      />
+                    </Information>
                     <Text>AVG SINR for Uplink PUSCH 4G</Text>
                   </InformationContent>
                 </InformationContainer>
               </InfoWrapper>
             ) : (
-              <p style={{
+              <p
+                style={{
                   fontSize: "20px",
                   fontWeight: "400",
                   color: "#e20074",
-                  textAlign:"center",
-                }}>No Data Available</p>
+                  textAlign: "center",
+                }}
+              >
+                No Data Available
+              </p>
             )}
           </MiddleRight>
         </MiddleSection>

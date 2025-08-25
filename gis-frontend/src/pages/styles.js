@@ -69,7 +69,7 @@ export const MiddleRight = styled.div`
   width: ${viewSizeCalculator(411, true)};
   height: ${viewSizeCalculator(650, true)};
   padding: ${viewSizeCalculator(24, true)};
-  gap: ${viewSizeCalculator(30, true)};
+  gap: ${viewSizeCalculator(10, true)};
   background-color: #ffffff;
   box-shadow: 1px 2px 8px 0px #1e1e1f1a;
   box-sizing: border-box;
@@ -80,8 +80,7 @@ export const MiddleRight = styled.div`
 
 export const ChartSection = styled.div`
   width: ${viewSizeCalculator(363, true)};
-  height: ${viewSizeCalculator(180, true)};
-  gap: ${viewSizeCalculator(10, true)};
+  height: ${viewSizeCalculator(200, true)};
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -93,8 +92,8 @@ export const Border = styled.div`
 `;
 
 export const ProgressBarContainer = styled.div`
-  width: ${viewSizeCalculator(234, true)};
-  height: ${viewSizeCalculator(48, true)};
+  width: 100%;
+  height: 100%;
 `;
 export const InformationContainer = styled.div`
   width: ${viewSizeCalculator(360, true)};
