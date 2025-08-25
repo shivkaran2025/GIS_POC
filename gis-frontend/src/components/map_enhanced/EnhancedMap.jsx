@@ -34,7 +34,7 @@ const ZOOM_LEVELS = {
   SITE: { min: 10.5, max: 22 }
 };
 
-const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSelectedSiteId  }) => {
+const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSelectedSiteId, onGlobeClick,onZipSelect }) => {
   const [currentView, setCurrentView] = useState("NATIONAL");
   const [currentMarket, setCurrentMarket] = useState(null);
   const [currentNeighborhoods, setCurrentNeighborhoods] = useState([]);
@@ -268,7 +268,10 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    // const zipCode = feature.properties.ZIP_CODE_TEXT; // Available for future use
+    const zipCode = feature.properties.ZCTA5CE10;
+    if (onZipSelect) {
+    onZipSelect(zipCode);
+  }
     
     // Set manual transition flag to prevent handleMove from overriding
     setIsManualTransition(true);
@@ -301,7 +304,7 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
     });
 
     setCurrentView("NEIGHBORHOOD");
-  }, [loadNeighborhoods]);
+  }, [loadNeighborhoods, onZipSelect ]);
 
 
   // Handle neighborhood click to zoom into neighborhood area
@@ -605,7 +608,7 @@ const EnhancedMap = ({ onMarketSelect, onNeighborhoodSelect, onViewChange, setSe
       <MapHeader viewInfo={getViewInfo()} onHeaderHover={handleHeaderHover} />
 
       {/* Map Controls */}
-      <MapControls mapRef={mapRef} onResetView={handleResetView} onControlHover={handleControlHover} />
+      <MapControls mapRef={mapRef} onResetView={handleResetView} onControlHover={handleControlHover} onGlobeClick={onGlobeClick} />
 
       {/* Tooltip */}
       <MapTooltip

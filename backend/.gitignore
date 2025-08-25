@@ -11,6 +11,7 @@ Vision_KPI_Info*.xlsx
 
 # Large data files
 CDC_V3_NEIGHBORHOODS_SHAPEFILE_simplified.json
+CDC_V3_NEIGHBORHOODS_SHAPEFILE.json
 site_lat_long_08132025.csv
 tmo_region_market.json
 Zip_Codes.geojson
