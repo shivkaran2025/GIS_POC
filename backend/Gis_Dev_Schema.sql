@@ -49,7 +49,7 @@ CREATE TABLE if not exists Geo_Data (
     geo_polygon JSON,
 
     -- Foreign Key: Links this geographic data back to a specific record in the hierarchy mapping table.    
-    demographic_id BIGINT, 
+    demographic_id CHAR(36) NOT NULL, 
     
     -- Standard audit columns for tracking record lifecycle.
     deleted_at TIMESTAMP NULL, -- Timestamp for soft deletes.

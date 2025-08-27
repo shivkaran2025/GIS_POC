@@ -1,0 +1,153 @@
+{
+	"id": "gis-poc-api-environment",
+	"name": "GIS POC API Environment",
+	"values": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "site_id",
+			"value": "SE03878A",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "market_id",
+			"value": "Seattle WA",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "zip_id",
+			"value": "98148",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "hex_id",
+			"value": "RU85001588",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "neighborhood_id",
+			"value": "BG530330279012",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "entity_id",
+			"value": "Seattle WA",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "date",
+			"value": "2024-08",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "kpi_metric",
+			"value": "ret_volte_drop_rate_4g",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "table_type",
+			"value": "market",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "kpi_type",
+			"value": "market",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "id_type",
+			"value": "market",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "id_value",
+			"value": "Seattle WA",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "record_id",
+			"value": "1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "test_lat",
+			"value": "47.6062",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "test_lng",
+			"value": "-122.3321",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "test_radius",
+			"value": "0.1",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "test_north",
+			"value": "47.7",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "test_south",
+			"value": "47.5",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "test_east",
+			"value": "-122.2",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "test_west",
+			"value": "-122.4",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "dataset",
+			"value": "cdc_neighborhoods",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "search_query",
+			"value": "Seattle",
+			"type": "default",
+			"enabled": true
+		},
+		{
+			"key": "search_dataset",
+			"value": "all",
+			"type": "default",
+			"enabled": true
+		}
+	],
+	"_postman_variable_scope": "environment",
+	"_postman_exported_at": "2024-01-01T00:00:00.000Z",
+	"_postman_exported_using": "Postman/10.0.0"
+}

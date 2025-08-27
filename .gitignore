@@ -1,2 +1,13 @@
+curl_examples.md
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+*.pyzwz
 # curl_examples.md
 gis-frontend.zip

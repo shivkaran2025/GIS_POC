@@ -42,7 +42,7 @@ def get_count_kpi_by_type_id(id_type, id_value):
                     "success": True,
                     "data": data,
                     "id_type": id_type,
-                    "id_value": id_value,
+                    "kpi_id": id_value,
                     "count": len(data),
                     "message": f"Found {data} for {id_type.title()} KPI records"
                 }), 200
