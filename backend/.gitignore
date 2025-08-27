@@ -16,6 +16,7 @@ site_lat_long_08132025.csv
 tmo_region_market.json
 Zip_Codes.geojson
 usa_zip_codes_geo_100m.json
+usa_zip_codes_geo_15m.json
 
 # Python
 .venv/

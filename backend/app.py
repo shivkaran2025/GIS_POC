@@ -24,9 +24,9 @@ app.config.from_object(Config)
 db = SQLAlchemy(app)
 
 # Load data files
-ZIP_CODES_FILE = 'usa_zip_codes_geo_100m.json'
+ZIP_CODES_FILE = 'usa_zip_codes_geo_15m.json'
 MARKET_REGIONS_FILE = 'tmo_region_market.json'
-CDC_NEIGHBORHOODS_FILE = 'CDC_V3_NEIGHBORHOODS_SHAPEFILE.json'
+CDC_NEIGHBORHOODS_FILE = 'CDC_V3_NEIGHBORHOODS_SHAPEFILE_simplified.json'
 SITE_LOCATIONS_FILE = 'site_lat_long_08132025.csv'
 
 # Global data storage
@@ -368,7 +368,7 @@ def get_market_region_by_id(market_name):
         
         # Find market region by name
         for feature in market_regions_data.get('features', []):
-            if feature.get('properties', {}).get('name') == market_name:
+            if feature.get('properties', {}).get('Eng_Market') == market_name:
                 return jsonify(feature), 200
         
         return jsonify({
@@ -414,7 +414,7 @@ def get_cdc_neighborhood_by_id(neighborhood_id):
         
         # Find neighborhood by ID
         for feature in cdc_neighborhoods_data.get('features', []):
-            if feature.get('properties', {}).get('GEOID') == neighborhood_id:
+            if feature.get('properties', {}).get('ID') == neighborhood_id:
                 return jsonify(feature), 200
         
         return jsonify({
@@ -699,6 +699,34 @@ def get_zip_codes_by_bounds():
             'message': f'Error retrieving ZIP codes by bounds: {str(e)}'
         }), 500
 
+@app.route('/api/zip-codes/zip-code/<zip_code>', methods=['GET'])
+def get_zip_code_by_zip_code(zip_code):
+    """Get ZIP code by zip code (UI compatibility)"""
+    try:
+        if not zip_codes_data:
+            return jsonify({
+                'success': False,
+                'message': 'ZIP codes data not available'
+            }), 404
+        
+        # Find ZIP code by zip code
+        for feature in zip_codes_data.get('features', []):
+            properties = feature.get('properties', {})
+            if properties.get('ZCTA5CE10') == zip_code:
+                return jsonify(feature), 200
+        
+        return jsonify({
+            'success': False,
+            'message': f'ZIP code {zip_code} not found'
+        }), 404
+        
+    except Exception as e:
+        logger.error(f"Error in get_zip_code_by_zip_code: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': f'Error retrieving ZIP code: {str(e)}'
+        }), 500
+
 @app.route('/api/search', methods=['GET'])
 def search():
     """Search across datasets (UI compatibility)"""
@@ -792,7 +820,17 @@ if __name__ == '__main__':
     from routes.kpi_routes import kpi_bp
     app.register_blueprint(kpi_bp)
     
+    # Register KPI timeseries routes
+    from routes.kpi_timeseries_routes import kpi_timeseries_bp
+    app.register_blueprint(kpi_timeseries_bp)
+    
+    # Register map routes
+    from routes.map_routes import map_bp
+    app.register_blueprint(map_bp)
+    
     print("✅ KPI routes registered")
+    print("✅ KPI timeseries routes registered")
+    print("✅ Map routes registered")
     print("✅ Data files loaded")
     print("✅ Spatial indexes built")
     print("="*80)

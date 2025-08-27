@@ -1,0 +1,991 @@
+{
+	"info": {
+		"_postman_id": "gis-poc-api-collection",
+		"name": "GIS POC API - Complete Collection",
+		"description": "Complete API collection for GIS POC application including all endpoints: Health & Info, KPI Data, KPI Timeseries, Map API, Geographic Data, and Search functionality",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "gis-poc-api"
+	},
+	"item": [
+		{
+			"name": "Health & Info",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": ["{{base_url}}"],
+							"path": ["health"]
+						},
+						"description": "Health check endpoint to verify API status"
+					},
+					"response": []
+				}
+			],
+			"description": "Basic API information and health check endpoints"
+		},
+		{
+			"name": "KPI Data API",
+			"item": [
+				{
+					"name": "Count Records",
+					"item": [
+						{
+							"name": "Count Site Records",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/count/site/{{site_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "count", "site", "{{site_id}}"]
+								},
+								"description": "Count KPI records for a specific site"
+							},
+							"response": []
+						},
+						{
+							"name": "Count Market Records",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/count/market/{{market_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "count", "market", "{{market_id}}"]
+								},
+								"description": "Count KPI records for a specific market"
+							},
+							"response": []
+						},
+						{
+							"name": "Count ZIP Records",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/count/zip/{{zip_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "count", "zip", "{{zip_id}}"]
+								},
+								"description": "Count KPI records for a specific ZIP code"
+							},
+							"response": []
+						},
+						{
+							"name": "Count Hex Records",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/count/hex/{{hex_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "count", "hex", "{{hex_id}}"]
+								},
+								"description": "Count KPI records for a specific hex"
+							},
+							"response": []
+						},
+						{
+							"name": "Count Neighborhood Records",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/count/neighborhood/{{neighborhood_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "count", "neighborhood", "{{neighborhood_id}}"]
+								},
+								"description": "Count KPI records for a specific neighborhood"
+							},
+							"response": []
+						}
+					],
+					"description": "Count KPI records for different entity types"
+				},
+				{
+					"name": "Market KPI",
+					"item": [
+						{
+							"name": "Get Market KPI by Market ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/market/market_id/{{market_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "market", "market_id", "{{market_id}}"]
+								},
+								"description": "Get market KPI data by market ID"
+							},
+							"response": []
+						}
+					],
+					"description": "Market KPI data endpoints"
+				},
+				{
+					"name": "ZIP KPI",
+					"item": [
+						{
+							"name": "Get ZIP KPI by ZIP ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/zip/zip_id/{{zip_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "zip", "zip_id", "{{zip_id}}"]
+								},
+								"description": "Get ZIP KPI data by ZIP ID"
+							},
+							"response": []
+						}
+					],
+					"description": "ZIP KPI data endpoints"
+				},
+				{
+					"name": "Hex KPI",
+					"item": [
+						{
+							"name": "Get Hex KPI by Hex ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/hex/hex_id/{{hex_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "hex", "hex_id", "{{hex_id}}"]
+								},
+								"description": "Get hex KPI data by hex ID"
+							},
+							"response": []
+						}
+					],
+					"description": "Hex KPI data endpoints"
+				},
+				{
+					"name": "Neighborhood KPI",
+					"item": [
+						{
+							"name": "Get Neighborhood KPI by Neighborhood ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/neighborhood/neighborhood_id/{{neighborhood_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "neighborhood", "neighborhood_id", "{{neighborhood_id}}"]
+								},
+								"description": "Get neighborhood KPI data by neighborhood ID"
+							},
+							"response": []
+						}
+					],
+					"description": "Neighborhood KPI data endpoints"
+				},
+				{
+					"name": "Site KPI",
+					"item": [
+						{
+							"name": "Get Site KPI by Site ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/kpi/site/site_id/{{site_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "kpi", "site", "site_id", "{{site_id}}"]
+								},
+								"description": "Get site KPI data by site ID"
+							},
+							"response": []
+						}
+					],
+					"description": "Site KPI data endpoints"
+				}
+			],
+			"description": "KPI data endpoints for all entity types"
+		},
+		{
+			"name": "KPI Timeseries API",
+			"item": [
+				{
+					"name": "Get Available KPI Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/kpi-timeseries/available-metrics",
+							"host": ["{{base_url}}"],
+							"path": ["api", "kpi-timeseries", "available-metrics"]
+						},
+						"description": "Get list of all available KPI metrics"
+					},
+					"response": []
+				},
+				{
+					"name": "Get KPI Timeseries (POST)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"entity_id\": \"{{entity_id}}\",\n  \"date\": \"{{date}}\",\n  \"kpi_metric\": \"{{kpi_metric}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/kpi-timeseries/timeseries",
+							"host": ["{{base_url}}"],
+							"path": ["api", "kpi-timeseries", "timeseries"]
+						},
+						"description": "Get KPI timeseries data using POST method"
+					},
+					"response": []
+				},
+				{
+					"name": "Get KPI Timeseries by Table Type (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/kpi-timeseries/timeseries/{{table_type}}/{{entity_id}}?date={{date}}&kpi_metric={{kpi_metric}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "kpi-timeseries", "timeseries", "{{table_type}}", "{{entity_id}}"],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{date}}"
+								},
+								{
+									"key": "kpi_metric",
+									"value": "{{kpi_metric}}"
+								}
+							]
+						},
+						"description": "Get KPI timeseries data for specific table type"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All KPIs for Entity (GET)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/kpi-timeseries/timeseries/{{table_type}}/{{entity_id}}?date={{date}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "kpi-timeseries", "timeseries", "{{table_type}}", "{{entity_id}}"],
+							"query": [
+								{
+									"key": "date",
+									"value": "{{date}}"
+								}
+							]
+						},
+						"description": "Get all KPI metrics for a specific entity and date"
+					},
+					"response": []
+				}
+			],
+			"description": "KPI timeseries data endpoints"
+		},
+		{
+			"name": "Map API",
+			"item": [
+				{
+					"name": "Get Available Entity Types",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/map/available-types",
+							"host": ["{{base_url}}"],
+							"path": ["api", "map", "available-types"]
+						},
+						"description": "Get list of available entity types"
+					},
+					"response": []
+				},
+				{
+					"name": "Market Data",
+					"item": [
+						{
+							"name": "Get All Market Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/market",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "market"]
+								},
+								"description": "Get all market geographic data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Market by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/market/{{market_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "market", "{{market_id}}"]
+								},
+								"description": "Get market geographic data by ID"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Markets by Bounds",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/market/bounds?north={{test_north}}&south={{test_south}}&east={{test_east}}&west={{test_west}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "market", "bounds"],
+									"query": [
+										{
+											"key": "north",
+											"value": "{{test_north}}"
+										},
+										{
+											"key": "south",
+											"value": "{{test_south}}"
+										},
+										{
+											"key": "east",
+											"value": "{{test_east}}"
+										},
+										{
+											"key": "west",
+											"value": "{{test_west}}"
+										}
+									]
+								},
+								"description": "Get market geographic data within bounds"
+							},
+							"response": []
+						}
+					],
+					"description": "Market geographic data endpoints"
+				},
+				{
+					"name": "Neighborhood Data",
+					"item": [
+						{
+							"name": "Get All Neighborhood Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/neighbourhood",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "neighbourhood"]
+								},
+								"description": "Get all neighborhood geographic data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Neighborhood by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/neighbourhood/{{neighborhood_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "neighbourhood", "{{neighborhood_id}}"]
+								},
+								"description": "Get neighborhood geographic data by ID"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Neighborhoods by Bounds",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/neighbourhood/bounds?north={{test_north}}&south={{test_south}}&east={{test_east}}&west={{test_west}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "neighbourhood", "bounds"],
+									"query": [
+										{
+											"key": "north",
+											"value": "{{test_north}}"
+										},
+										{
+											"key": "south",
+											"value": "{{test_south}}"
+										},
+										{
+											"key": "east",
+											"value": "{{test_east}}"
+										},
+										{
+											"key": "west",
+											"value": "{{test_west}}"
+										}
+									]
+								},
+								"description": "Get neighborhood geographic data within bounds"
+							},
+							"response": []
+						}
+					],
+					"description": "Neighborhood geographic data endpoints"
+				},
+				{
+					"name": "Site Data",
+					"item": [
+						{
+							"name": "Get All Site Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/site",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "site"]
+								},
+								"description": "Get all site geographic data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/site/{{site_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "site", "{{site_id}}"]
+								},
+								"description": "Get site geographic data by ID"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Sites by Bounds",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/site/bounds?north={{test_north}}&south={{test_south}}&east={{test_east}}&west={{test_west}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "site", "bounds"],
+									"query": [
+										{
+											"key": "north",
+											"value": "{{test_north}}"
+										},
+										{
+											"key": "south",
+											"value": "{{test_south}}"
+										},
+										{
+											"key": "east",
+											"value": "{{test_east}}"
+										},
+										{
+											"key": "west",
+											"value": "{{test_west}}"
+										}
+									]
+								},
+								"description": "Get site geographic data within bounds"
+							},
+							"response": []
+						}
+					],
+					"description": "Site geographic data endpoints"
+				},
+				{
+					"name": "ZIP Data",
+					"item": [
+						{
+							"name": "Get All ZIP Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/zip",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "zip"]
+								},
+								"description": "Get all ZIP geographic data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get ZIP by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/zip/{{zip_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "zip", "{{zip_id}}"]
+								},
+								"description": "Get ZIP geographic data by ID"
+							},
+							"response": []
+						},
+						{
+							"name": "Get ZIPs by Bounds",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/zip/bounds?north={{test_north}}&south={{test_south}}&east={{test_east}}&west={{test_west}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "zip", "bounds"],
+									"query": [
+										{
+											"key": "north",
+											"value": "{{test_north}}"
+										},
+										{
+											"key": "south",
+											"value": "{{test_south}}"
+										},
+										{
+											"key": "east",
+											"value": "{{test_east}}"
+										},
+										{
+											"key": "west",
+											"value": "{{test_west}}"
+										}
+									]
+								},
+								"description": "Get ZIP geographic data within bounds"
+							},
+							"response": []
+						}
+					],
+					"description": "ZIP geographic data endpoints"
+				},
+				{
+					"name": "Hex Data",
+					"item": [
+						{
+							"name": "Get All Hex Data",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/hex",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "hex"]
+								},
+								"description": "Get all hex geographic data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Hex by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/hex/{{hex_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "hex", "{{hex_id}}"]
+								},
+								"description": "Get hex geographic data by ID"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Hexs by Bounds",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/map/hex/bounds?north={{test_north}}&south={{test_south}}&east={{test_east}}&west={{test_west}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "map", "hex", "bounds"],
+									"query": [
+										{
+											"key": "north",
+											"value": "{{test_north}}"
+										},
+										{
+											"key": "south",
+											"value": "{{test_south}}"
+										},
+										{
+											"key": "east",
+											"value": "{{test_east}}"
+										},
+										{
+											"key": "west",
+											"value": "{{test_west}}"
+										}
+									]
+								},
+								"description": "Get hex geographic data within bounds"
+							},
+							"response": []
+						}
+					],
+					"description": "Hex geographic data endpoints"
+				}
+			],
+			"description": "Map API endpoints for geographic data"
+		},
+		{
+			"name": "Geographic Data API",
+			"item": [
+				{
+					"name": "Get GeoJSON Data",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/geojson?dataset={{dataset}}&lat={{test_lat}}&lng={{test_lng}}&radius={{test_radius}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "geojson"],
+							"query": [
+								{
+									"key": "dataset",
+									"value": "{{dataset}}"
+								},
+								{
+									"key": "lat",
+									"value": "{{test_lat}}"
+								},
+								{
+									"key": "lng",
+									"value": "{{test_lng}}"
+								},
+								{
+									"key": "radius",
+									"value": "{{test_radius}}"
+								}
+							]
+						},
+						"description": "Get GeoJSON data with spatial filtering"
+					},
+					"response": []
+				},
+				{
+					"name": "Market Regions",
+					"item": [
+						{
+							"name": "Get All Market Regions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/market-regions",
+									"host": ["{{base_url}}"],
+									"path": ["api", "market-regions"]
+								},
+								"description": "Get all market regions data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Market Region by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/market-regions/id/{{market_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "market-regions", "id", "{{market_id}}"]
+								},
+								"description": "Get market region by ID"
+							},
+							"response": []
+						}
+					],
+					"description": "Market regions endpoints"
+				},
+				{
+					"name": "CDC Neighborhoods",
+					"item": [
+						{
+							"name": "Get All CDC Neighborhoods",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/cdc-neighborhoods",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cdc-neighborhoods"]
+								},
+								"description": "Get all CDC neighborhoods data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get CDC Neighborhood by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/cdc-neighborhoods/id/{{neighborhood_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cdc-neighborhoods", "id", "{{neighborhood_id}}"]
+								},
+								"description": "Get CDC neighborhood by ID"
+							},
+							"response": []
+						},
+						{
+							"name": "Get CDC Neighborhoods by Bounds",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/cdc-neighborhoods/bounds?north={{test_north}}&south={{test_south}}&east={{test_east}}&west={{test_west}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "cdc-neighborhoods", "bounds"],
+									"query": [
+										{
+											"key": "north",
+											"value": "{{test_north}}"
+										},
+										{
+											"key": "south",
+											"value": "{{test_south}}"
+										},
+										{
+											"key": "east",
+											"value": "{{test_east}}"
+										},
+										{
+											"key": "west",
+											"value": "{{test_west}}"
+										}
+									]
+								},
+								"description": "Get CDC neighborhoods within bounds"
+							},
+							"response": []
+						}
+					],
+					"description": "CDC neighborhoods endpoints"
+				},
+				{
+					"name": "Site Locations",
+					"item": [
+						{
+							"name": "Get All Site Locations",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/site-locations",
+									"host": ["{{base_url}}"],
+									"path": ["api", "site-locations"]
+								},
+								"description": "Get all site locations data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site Locations by Coordinates",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/site-locations/coordinates?lat={{test_lat}}&lng={{test_lng}}&radius={{test_radius}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "site-locations", "coordinates"],
+									"query": [
+										{
+											"key": "lat",
+											"value": "{{test_lat}}"
+										},
+										{
+											"key": "lng",
+											"value": "{{test_lng}}"
+										},
+										{
+											"key": "radius",
+											"value": "{{test_radius}}"
+										}
+									]
+								},
+								"description": "Get site locations by coordinates"
+							},
+							"response": []
+						},
+						{
+							"name": "Get Site by ID",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/site-locations/site/{{site_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "site-locations", "site", "{{site_id}}"]
+								},
+								"description": "Get site location by ID"
+							},
+							"response": []
+						}
+					],
+					"description": "Site locations endpoints"
+				},
+				{
+					"name": "ZIP Codes",
+					"item": [
+						{
+							"name": "Get All ZIP Codes",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/zip-codes",
+									"host": ["{{base_url}}"],
+									"path": ["api", "zip-codes"]
+								},
+								"description": "Get all ZIP codes data"
+							},
+							"response": []
+						},
+						{
+							"name": "Get ZIP Codes by Bounds",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/zip-codes/bounds?north={{test_north}}&south={{test_south}}&east={{test_east}}&west={{test_west}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "zip-codes", "bounds"],
+									"query": [
+										{
+											"key": "north",
+											"value": "{{test_north}}"
+										},
+										{
+											"key": "south",
+											"value": "{{test_south}}"
+										},
+										{
+											"key": "east",
+											"value": "{{test_east}}"
+										},
+										{
+											"key": "west",
+											"value": "{{test_west}}"
+										}
+									]
+								},
+								"description": "Get ZIP codes within bounds"
+							},
+							"response": []
+						},
+						{
+							"name": "Get ZIP Code by ZIP Code",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{base_url}}/api/zip-codes/zip-code/{{zip_id}}",
+									"host": ["{{base_url}}"],
+									"path": ["api", "zip-codes", "zip-code", "{{zip_id}}"]
+								},
+								"description": "Get ZIP code by ZIP code value"
+							},
+							"response": []
+						}
+					],
+					"description": "ZIP codes endpoints"
+				}
+			],
+			"description": "Geographic data endpoints for UI compatibility"
+		},
+		{
+			"name": "Search API",
+			"item": [
+				{
+					"name": "Search Across Datasets",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/search?q={{search_query}}&dataset={{search_dataset}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "{{search_query}}"
+								},
+								{
+									"key": "dataset",
+									"value": "{{search_dataset}}"
+								}
+							]
+						},
+						"description": "Search across all datasets"
+					},
+					"response": []
+				}
+			],
+			"description": "Search functionality endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script for logging",
+					"console.log('Making request to: ' + pm.request.url);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Test script for response validation",
+					"pm.test('Status code is 200', function () {",
+					"    pm.response.to.have.status(200);",
+					"});",
+					"",
+					"pm.test('Response has success property', function () {",
+					"    const responseJson = pm.response.json();",
+					"    pm.expect(responseJson).to.have.property('success');",
+					"});",
+					"",
+					"pm.test('Response time is less than 5000ms', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:5000",
+			"type": "string"
+		}
+	]
+}
