@@ -234,29 +234,17 @@ def get_entities_by_bounds(entity_type):
                 "message": f"Invalid entity type. Must be one of: MARKET, ZIP, HEX, NEIGHBOURHOOD, SITE"
             }), 400
         
-        # Get query parameters
-        north = request.args.get('north')
-        south = request.args.get('south')
-        east = request.args.get('east')
-        west = request.args.get('west')
+        # Get query parameters with automatic type conversion
+        north = request.args.get('north', type=float)
+        south = request.args.get('south', type=float)
+        east = request.args.get('east', type=float)
+        west = request.args.get('west', type=float)
         
         # Validate required parameters
         if not all([north, south, east, west]):
             return jsonify({
                 "success": False,
                 "message": "All bounds parameters are required: north, south, east, west"
-            }), 400
-        
-        # Validate numeric values
-        try:
-            north = float(north)
-            south = float(south)
-            east = float(east)
-            west = float(west)
-        except ValueError:
-            return jsonify({
-                "success": False,
-                "message": "All bounds parameters must be valid numbers"
             }), 400
         
         # Validate bounds logic
@@ -274,43 +262,102 @@ def get_entities_by_bounds(entity_type):
         
         entity_type_upper = entity_type.upper()
         
-        # Get database connection
-        engine = get_db_connection()
+        # Log the request for debugging
+        logger.info(f"Bounds request for {entity_type_upper}: north={north}, south={south}, east={east}, west={west}")
         
-        with engine.connect() as connection:
-            # Query to get geographic data within bounds
-            query = text("""
-                SELECT 
-                    gd.id,
-                    gd.type,
-                    gd.latitude,
-                    gd.longitude,
-                    gd.geo_polygon,
-                    gd.demographic_id,
-                    gd.created_at,
-                    gd.updated_at
-                FROM Geo_Data gd
-                WHERE gd.type = :entity_type 
-                AND gd.latitude BETWEEN :south AND :north
-                AND gd.longitude BETWEEN :west AND :east
-                AND gd.deleted_at IS NULL
-                ORDER BY gd.id
-            """)
+        # Try database first, fallback to in-memory data
+        try:
+            # Get database connection
+            engine = get_db_connection()
             
-            result = connection.execute(query, {
-                "entity_type": entity_type_upper,
-                "north": north,
-                "south": south,
-                "east": east,
-                "west": west
-            })
+            with engine.connect() as connection:
+                # Query to get geographic data within bounds
+                query = text("""
+                    SELECT 
+                        gd.id,
+                        gd.type,
+                        gd.latitude,
+                        gd.longitude,
+                        gd.geo_polygon,
+                        gd.demographic_id,
+                        gd.created_at,
+                        gd.updated_at
+                    FROM Geo_Data gd
+                    WHERE gd.type = :entity_type 
+                    AND gd.latitude BETWEEN :south AND :north
+                    AND gd.longitude BETWEEN :west AND :east
+                    AND gd.deleted_at IS NULL
+                    ORDER BY gd.id
+                """)
+                
+                # logger.info(f"Executing database query: {query}")
+                
+                result = connection.execute(query, {
+                    "entity_type": entity_type_upper,
+                    "north": north,
+                    "south": south,
+                    "east": east,
+                    "west": west
+                })
+                
+                records = result.fetchall()
+                logger.info(f"Database query returned {len(records)} records")
+                
+                if records:
+                    # Convert records to list of dictionaries
+                    data = []
+                    for record in records:
+                        record_dict = dict(record._mapping)
+                        # Parse JSON polygon if it exists
+                        if record_dict.get('geo_polygon'):
+                            try:
+                                record_dict['geo_polygon'] = json.loads(record_dict['geo_polygon'])
+                            except (json.JSONDecodeError, TypeError):
+                                record_dict['geo_polygon'] = None
+                        data.append(record_dict)
+                    
+                    return jsonify({
+                        "success": True,
+                        "data": data,
+                        "count": len(data),
+                        "entity_type": entity_type_upper,
+                        "bounds": {
+                            "north": north,
+                            "south": south,
+                            "east": east,
+                            "west": west
+                        },
+                        "message": f"Found {len(data)} geographic records for {entity_type_upper} within bounds",
+                        "source": "database"
+                    }), 200
+                
+        except Exception as db_error:
+            logger.warning(f"Database query failed for {entity_type_upper}: {str(db_error)}")
+            logger.info("Falling back to in-memory data...")
+        
+        # Fallback to in-memory data (similar to working implementation)
+        try:
+            from flask import current_app
             
-            records = result.fetchall()
+            # Map entity types to in-memory data sources from app config
+            data_mapping = {
+                'MARKET': current_app.config.get('market_regions_data'),
+                'ZIP': current_app.config.get('zip_codes_data'),
+                'NEIGHBOURHOOD': current_app.config.get('cdc_neighborhoods_data'),
+                'SITE': current_app.config.get('site_locations_data'),
+                'HEX': None  # HEX data not available in memory
+            }
             
-            if not records:
+            in_memory_data = data_mapping.get(entity_type_upper)
+            
+            logger.info(f"In-memory data for {entity_type_upper}: {in_memory_data is not None}")
+            if in_memory_data:
+                logger.info(f"In-memory data has {len(in_memory_data.get('features', []))} features")
+            
+            if not in_memory_data:
                 return jsonify({
                     "success": False,
-                    "message": f"No geographic data found for {entity_type} within specified bounds",
+                    "message": f"No data available for {entity_type_upper} (database failed and no in-memory data)",
                     "entity_type": entity_type_upper,
                     "bounds": {
                         "north": north,
@@ -320,31 +367,93 @@ def get_entities_by_bounds(entity_type):
                     }
                 }), 404
             
-            # Convert records to list of dictionaries
-            data = []
-            for record in records:
-                record_dict = dict(record._mapping)
-                # Parse JSON polygon if it exists
-                if record_dict.get('geo_polygon'):
-                    try:
-                        record_dict['geo_polygon'] = json.loads(record_dict['geo_polygon'])
-                    except (json.JSONDecodeError, TypeError):
-                        record_dict['geo_polygon'] = None
-                data.append(record_dict)
+            # Import the bounds checking function from app.py
+            def check_feature_in_bounds(feature, north, south, east, west):
+                """Check if a GeoJSON feature intersects with given bounds"""
+                try:
+                    geometry = feature.get('geometry', {})
+                    if not geometry:
+                        return False
+                    
+                    geom_type = geometry.get('type')
+                    coordinates = geometry.get('coordinates', [])
+                    
+                    if geom_type == 'Polygon':
+                        if coordinates and len(coordinates) > 0:
+                            exterior_ring = coordinates[0]
+                            for coord_pair in exterior_ring:
+                                if len(coord_pair) >= 2:
+                                    lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                                    if west <= lng <= east and south <= lat <= north:
+                                        return True
+                    
+                    elif geom_type == 'MultiPolygon':
+                        for polygon in coordinates:
+                            if polygon and len(polygon) > 0:
+                                exterior_ring = polygon[0]
+                                for coord_pair in exterior_ring:
+                                    if len(coord_pair) >= 2:
+                                        lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                                        if west <= lng <= east and south <= lat <= north:
+                                            return True
+                    
+                    elif geom_type == 'Point':
+                        if len(coordinates) >= 2:
+                            lng, lat = float(coordinates[0]), float(coordinates[1])
+                            return west <= lng <= east and south <= lat <= north
+                    
+                    elif geom_type == 'MultiPoint':
+                        for coord_pair in coordinates:
+                            if len(coord_pair) >= 2:
+                                lng, lat = float(coord_pair[0]), float(coord_pair[1])
+                                if west <= lng <= east and south <= lat <= north:
+                                    return True
+                    
+                    return False
+                    
+                except (IndexError, TypeError, KeyError, ValueError) as e:
+                    logger.warning(f"Error checking bounds for feature: {str(e)}")
+                    return False
             
-            return jsonify({
-                "success": True,
-                "data": data,
-                "count": len(data),
-                "entity_type": entity_type_upper,
-                "bounds": {
-                    "north": north,
-                    "south": south,
-                    "east": east,
-                    "west": west
-                },
-                "message": f"Found {len(data)} geographic records for {entity_type_upper} within bounds"
-            }), 200
+            # Filter features within bounds
+            results = []
+            for feature in in_memory_data.get('features', []):
+                if check_feature_in_bounds(feature, north, south, east, west):
+                    results.append(feature)
+            
+            logger.info(f"In-memory query found {len(results)} features for {entity_type_upper}")
+            
+            if results:
+                return jsonify({
+                    "success": True,
+                    "data": results,
+                    "count": len(results),
+                    "entity_type": entity_type_upper,
+                    "bounds": {
+                        "north": north,
+                        "south": south,
+                        "east": east,
+                        "west": west
+                    },
+                    "message": f"Found {len(results)} geographic records for {entity_type_upper} within bounds",
+                    "source": "in-memory"
+                }), 200
+            
+        except Exception as memory_error:
+            logger.error(f"In-memory data query failed for {entity_type_upper}: {str(memory_error)}")
+        
+        # If both database and in-memory failed, return no data found
+        return jsonify({
+            "success": False,
+            "message": f"No geographic data found for {entity_type_upper} within specified bounds",
+            "entity_type": entity_type_upper,
+            "bounds": {
+                "north": north,
+                "south": south,
+                "east": east,
+                "west": west
+            }
+        }), 404
             
     except SQLAlchemyError as e:
         logger.error(f"Database error in get_entities_by_bounds: {str(e)}")
