@@ -828,6 +828,12 @@ if __name__ == '__main__':
     from routes.map_routes import map_bp
     app.register_blueprint(map_bp)
     
+    # Make data available to map routes through app context
+    app.config['market_regions_data'] = market_regions_data
+    app.config['zip_codes_data'] = zip_codes_data
+    app.config['cdc_neighborhoods_data'] = cdc_neighborhoods_data
+    app.config['site_locations_data'] = site_locations_data
+    
     print("✅ KPI routes registered")
     print("✅ KPI timeseries routes registered")
     print("✅ Map routes registered")
