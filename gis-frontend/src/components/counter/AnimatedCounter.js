@@ -7,9 +7,9 @@ const countUp = (finalValue, duration, setCount, decimals) => {
   const updateCounter = () => {
     start += increment;
     if (start >= finalValue) {
-      setCount(finalValue.toFixed(decimals));
+      setCount(finalValue);
     } else {
-      setCount(start.toFixed(decimals));
+      setCount(start);
       requestAnimationFrame(updateCounter);
     }
   };
@@ -18,13 +18,18 @@ const countUp = (finalValue, duration, setCount, decimals) => {
 };
 
 const AnimatedCounter = ({ target, duration = 400, decimals = 0 }) => {
-  const [count, setCount] = useState("0");
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
     countUp(target, duration, setCount, decimals);
   }, [target, duration, decimals]);
 
-  return <>{count}</>; 
+  const formattedCount = Number(count).toLocaleString("en-IN", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+
+  return <>{formattedCount}</>;
 };
 
 export default AnimatedCounter;

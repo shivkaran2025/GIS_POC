@@ -222,118 +222,109 @@ const Dashboard = () => {
           </MiddleCenter>
 
           <MiddleRight>
-            <h1
-              style={{
-                fontSize: `${viewSizeCalculator(16, true)}`,
-                fontWeight: 700,
-                color: "#333333",
-              }}
-            >
+            <h1 style={{
+              fontSize: viewSizeCalculator(20, true),
+              fontWeight: 700,
+              color: "#333333",
+              fontFamily: "Inter",
+            }}>
               On Air Sites
             </h1>
 
-            <ChartSection>
-              {/* <PieChart /> */}
-              <PieChart
-                centerContent={
-                  <div style={{ textAlign: "center" }}>
-                    <div
-                      style={{
-                        fontSize: viewSizeCalculator(15, true),
-                        fontWeight: 700,
-                        color: "#333",
-                        lineHeight: 1.1,
-                      }}
-                    >
-                      <AnimatedCounter target={totalSites} duration={800} />
-                    </div>
-                    <div
-                      style={{
-                        fontSize: viewSizeCalculator(12, true),
-                        fontWeight: 400,
-                        color: "#888",
-                      }}
-                    >
-                      Total Sites
-                    </div>
+          <ChartSection>
+            <PieChart
+              centerContent={
+                <div style={{ textAlign: "center" }}>
+                  <div
+                    style={{
+                      fontSize: viewSizeCalculator(18, true),
+                      fontWeight: 700,
+                      color: "#333",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    <AnimatedCounter
+                      target={totalSites}
+                      duration={800}
+                    />
                   </div>
-                }
-              />
-            </ChartSection>
-            <Border />
-            <ProgressBarContainer>
-              <img
-                src={BarChart}
-                style={{
-                  width: "100%",
-                  height: "100%",
-                }}
-                alt=""
-                onClick={handleCollapseClick}
-              />
-            </ProgressBarContainer>
-            <Border />
-            {isData === "success" ? (
-              <InfoWrapper>
-                <InformationContainer>
-                  <InformationContent>
-                    <Information>
-                      <AnimatedCounter
-                        target={sitePoorChnlQlty}
-                        duration={800}
-                      />
-                    </Information>
-                    <Text>Sites with Poor Channel Quality</Text>
-                  </InformationContent>
-                  <InformationContent>
-                    <Information>
-                      <AnimatedCounter
-                        target={avgDcr}
-                        duration={800}
-                        decimals={2}
-                      />
-                      %
-                    </Information>
-                    <Text>Average DCR</Text>
-                  </InformationContent>
-                </InformationContainer>
+                  <div
+                    style={{
+                      fontSize: viewSizeCalculator(14, true),
+                      fontWeight: 400,
+                      color: "#888",
+                    }}
+                  >
+                    Total Sites
+                  </div>
+                </div>
+              }
+            />
+          </ChartSection>
+          <Border />
+        
+          {isData === "success" ? (
+            <InfoWrapper>
+              <InformationContainer>
+                <InformationContent>
+                  <Information>
+                    <AnimatedCounter
+                      target={sitePoorChnlQlty}
+                      duration={800}
+                    />
+                  </Information>
+                  <Text>Sites with Poor Channel Quality</Text>
+                </InformationContent>
+                <InformationContent>
+                  <Information>
+                    <AnimatedCounter
+                      target={avgDcr}
+                      duration={800}
+                      decimals={2}
+                    />
+                    %
+                  </Information>
+                  <Text>Average DCR</Text>
+                </InformationContent>
+              </InformationContainer>
 
-                <InformationContainer>
-                  <InformationContent>
-                    <Information>
-                      <AnimatedCounter
-                        target={avgSINR5G}
-                        duration={800}
-                        decimals={2}
-                      />
-                    </Information>
-                    <Text>AVG SINR for Uplink PUSCH 5G</Text>
-                  </InformationContent>
-                  <InformationContent>
-                    <Information>
-                      <AnimatedCounter
-                        target={avgSINR4G}
-                        duration={800}
-                        decimals={2}
-                      />
-                    </Information>
-                    <Text>AVG SINR for Uplink PUSCH 4G</Text>
-                  </InformationContent>
-                </InformationContainer>
-              </InfoWrapper>
-            ) : (
-              <p
-                style={{
-                  fontSize: "20px",
-                  fontWeight: "400",
-                  color: "#e20074",
-                  textAlign: "center",
-                }}
-              >
-                No Data Available
-              </p>
-            )}
-          </MiddleRight>
+              <InformationContainer>
+                <InformationContent>
+                  <Information>
+                    <AnimatedCounter
+                      target={avgSINR5G}
+                      duration={800}
+                      decimals={2}
+                    />
+                  </Information>
+                  <Text>AVG SINR for Uplink PUSCH 5G</Text>
+                </InformationContent>
+                <InformationContent>
+                  <Information>
+                    <AnimatedCounter
+                      target={avgSINR4G}
+                      duration={800}
+                      decimals={2}
+                    />
+                  </Information>
+                  <Text>AVG SINR for Uplink PUSCH 4G</Text>
+                </InformationContent>
+              </InformationContainer>
+            </InfoWrapper>
+          ) : (
+            <p
+              style={{
+                fontSize: "20px",
+                fontWeight: "400",
+                color: "#e20074",
+                textAlign: "center",
+              }}
+            >
+              No Data Available
+            </p>
+          )}
+        </MiddleRight>
+
         </MiddleSection>
       </MainSection>
       <FooterSection>

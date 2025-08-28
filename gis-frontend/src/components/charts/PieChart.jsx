@@ -20,7 +20,7 @@ const PieChart = ({ centerContent }) => {
     <div
       style={{
         width: "100%",
-        height: viewSizeCalculator(400, true),
+        height: viewSizeCalculator(250, true),
         position: "relative",
         display: "flex",
         alignItems: "center",
